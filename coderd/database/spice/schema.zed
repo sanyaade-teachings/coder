@@ -1,0 +1,68 @@
+// Read this blog post before looking at this data
+// https://authzed.com/blog/check-it-out
+//
+// Glossary: https://authzed.com/docs/reference/glossary
+// Zanzibar Term Mapping: https://authzed.com/docs/reference/glossary#mapping-terminology-from-the-zanzibar-paper
+
+// platform is the site-wide level on the Coder product.
+definition platform {
+	relation administrator: user
+	relation member: user
+	relation auditor: user
+
+
+	permission super_admin = administrator
+}
+
+definition group {
+	relation admin: user
+	// Direct members are users.
+	relation direct_member: user
+	// Child groups allow nesting of groups
+	relation child_group: group
+	relation platform: platform
+
+	permission member = direct_member + child_group->member
+	permission delete = admin + platform->super_admin
+}
+
+// Resources
+
+definition user {}
+
+definition workspace_proxy {}
+
+definition workspace {
+	// Owner of the workspace
+	relation owner: user
+	relation platform: platform
+	relation group: group
+
+	permission view = owner + platform->super_admin + group->member
+	permission update = owner + platform->super_admin
+	permission delete= owner + platform->super_admin
+	// Only the owner can connect
+	permission ssh = owner
+}
+definition workspace_build {
+	// A workspace owns this build
+	relation workspace: workspace
+
+	// Can view if the workspace->view perm exists
+	permission view = workspace->view
+}
+
+
+definition provisioner {
+}
+
+definition template {
+}
+
+
+definition template_version{
+}
+
+definition file {}
+
+definition provisioner_job {}
