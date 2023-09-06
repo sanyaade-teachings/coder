@@ -16,7 +16,7 @@ var _ = v1.NewSchemaServiceClient
 //go:embed schema.zed
 var schema string
 
-func foo(ctx context.Context) error {
+func DB(ctx context.Context) error {
 	srv, err := newServer(ctx)
 	if err != nil {
 		return err
@@ -48,6 +48,7 @@ func foo(ctx context.Context) error {
 	}
 
 	token := resp.GetWrittenAt()
+	// This will not work yet!
 	checkResp, err := permSrv.CheckPermission(ctx, &v1.CheckPermissionRequest{
 		Permission:  "view",
 		Consistency: &v1.Consistency{Requirement: &v1.Consistency_AtLeastAsFresh{AtLeastAsFresh: token}},
@@ -89,9 +90,13 @@ func newServer(ctx context.Context) (server.RunnableServer, error) {
 		server.WithGRPCAuthFunc(func(ctx context.Context) (context.Context, error) {
 			return ctx, nil
 		}),
-		server.WithHTTPGateway(util.HTTPServerConfig{HTTPEnabled: false}),
+		server.WithHTTPGateway(util.HTTPServerConfig{
+			HTTPAddress: "localhost:50001",
+			HTTPEnabled: false}),
 		//server.WithDashboardAPI(util.HTTPServerConfig{HTTPEnabled: false}),
-		server.WithMetricsAPI(util.HTTPServerConfig{HTTPEnabled: true}),
+		server.WithMetricsAPI(util.HTTPServerConfig{
+			HTTPAddress: "localhost:50000",
+			HTTPEnabled: true}),
 		// disable caching since it's all in memory
 		server.WithDispatchCacheConfig(server.CacheConfig{Enabled: false, Metrics: false}),
 		server.WithNamespaceCacheConfig(server.CacheConfig{Enabled: false, Metrics: false}),
