@@ -9,7 +9,8 @@ import (
 )
 
 func TestSpiceDB(t *testing.T) {
-	err := spice.DB(context.Background())
+	// Output colors: https://authzed.com/docs/guides/debugging#displaying-explanations-via-zed
+	err := spice.RunExample(context.Background())
 	require.NoError(t, err)
 	//time.Sleep(time.Second * 1000)
 }

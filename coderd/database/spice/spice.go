@@ -5,6 +5,8 @@ import (
 	_ "embed"
 	"log"
 
+	"github.com/authzed/spicedb/pkg/tuple"
+
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"golang.org/x/xerrors"
@@ -28,7 +30,7 @@ var _ = v1.NewSchemaServiceClient
 //go:embed schema.zed
 var schema string
 
-func DB(ctx context.Context) error {
+func RunExample(ctx context.Context) error {
 	srv, err := newServer(ctx)
 	if err != nil {
 		return err
@@ -48,61 +50,44 @@ func DB(ctx context.Context) error {
 	}()
 
 	_, err = schemaSrv.WriteSchema(ctx, &v1.WriteSchemaRequest{
-		Schema: `definition user {}
-                 definition resource {
-                   relation viewer: user
-                   permission view = viewer
-                 }`,
+		Schema: schema,
 	})
 	if err != nil {
 		return err
 	}
 
-	resp, err := permSrv.WriteRelationships(ctx, &v1.WriteRelationshipsRequest{Updates: []*v1.RelationshipUpdate{
-		{
-			Operation: v1.RelationshipUpdate_OPERATION_TOUCH,
-			Relationship: &v1.Relationship{
-				Resource: &v1.ObjectReference{
-					ObjectId:   "my_book",
-					ObjectType: "resource",
-				},
-				Relation: "viewer",
-				Subject: &v1.SubjectReference{
-					Object: &v1.ObjectReference{
-						ObjectId:   "john_doe",
-						ObjectType: "user",
-					},
-				},
-			},
-		},
-	}})
+	token, err := populateRelationships(ctx, permSrv)
 	if err != nil {
 		return err
 	}
 
-	token := resp.GetWrittenAt()
+	permsToCheck := []string{
+		"workspace:dogfood#view@user:root",
+		"workspace:dogfood#view@user:alice",
+		"workspace:dogfood#view@user:charlie",
+		"workspace:dogfood#view@user:gopher",
+		"workspace_build:dogfood-build#view@user:gopher",
+		// Look for cache hits?
+		"workspace_build:dogfood-build#view@user:gopher",
+	}
 
-	for i := 0; i < 10; i++ {
+	for _, perm := range permsToCheck {
+		tup := tuple.Parse(perm)
+		r := tuple.ToRelationship(tup)
+
+		// Add debug information to the request so we can see the trace of the check.
 		var trailerMD metadata.MD
 		ctx = requestmeta.AddRequestHeaders(ctx, requestmeta.RequestDebugInformation)
 		checkResp, err := permSrv.CheckPermission(ctx, &v1.CheckPermissionRequest{
 			Permission:  "view",
 			Consistency: &v1.Consistency{Requirement: &v1.Consistency_AtLeastAsFresh{AtLeastAsFresh: token}},
-			Resource: &v1.ObjectReference{
-				ObjectId:   "my_book",
-				ObjectType: "resource",
-			},
-			Subject: &v1.SubjectReference{
-				Object: &v1.ObjectReference{
-					ObjectId:   "john_doe",
-					ObjectType: "user",
-				},
-			},
+			Resource:    r.Resource,
+			Subject:     r.Subject,
 		}, grpc.Trailer(&trailerMD))
 		if err != nil {
 			log.Fatal("unable to issue PermissionCheck: %w", err)
 		} else {
-
+			log.Printf("check result (%s): %s", perm, checkResp.Permissionship.String())
 			// All this debug stuff just shows the trace of the check
 			// with information like cache hits.
 			found, err := responsemeta.GetResponseTrailerMetadata(trailerMD, responsemeta.DebugInformation)
@@ -123,12 +108,51 @@ func DB(ctx context.Context) error {
 				DisplayCheckTrace(debugInfo.Check, tp, false)
 				tp.Print()
 			}
-
 		}
-		log.Printf("check result: %s", checkResp.Permissionship.String())
 	}
 
 	return nil
+}
+
+func populateRelationships(ctx context.Context, permSrv v1.PermissionsServiceClient) (*v1.ZedToken, error) {
+	// Write in a workspace
+	relationships := []string{
+		"platform:default#administrator@user:root",
+
+		//"Dogfood" workspace owned by "Alice" with the group "developers"
+		"workspace:dogfood#owner@user:alice",
+		"workspace_build:dogfood-build#workspace@workspace:dogfood",
+		"workspace:dogfood#platform@platform:default",
+		"workspace:dogfood#group@group:developers",
+
+		//Group middle-class is in group developers
+		"group:developers#direct_member@user:bob",
+		"group:back-end#direct_member@user:charlie",
+		"group:golang#direct_member@user:gopher",
+		"group:developers#child_group@group:back-end",
+		"group:developers#child_group@group:front-end",
+		"group:back-end#child_group@group:golang",
+		"group:back-end#child_group@group:sql",
+	}
+
+	var token *v1.ZedToken
+	for _, rel := range relationships {
+		tup := tuple.Parse(rel)
+		v1Rel := tuple.ToRelationship(tup)
+
+		resp, err := permSrv.WriteRelationships(ctx, &v1.WriteRelationshipsRequest{Updates: []*v1.RelationshipUpdate{
+			{
+				Operation:    v1.RelationshipUpdate_OPERATION_TOUCH,
+				Relationship: v1Rel,
+			},
+		}})
+		if err != nil {
+			return nil, err
+		}
+		token = resp.GetWrittenAt()
+	}
+
+	return token, nil
 }
 
 func newServer(ctx context.Context) (server.RunnableServer, error) {
@@ -162,9 +186,25 @@ func newServer(ctx context.Context) (server.RunnableServer, error) {
 		server.WithMetricsAPI(util.HTTPServerConfig{
 			HTTPAddress: "localhost:50000",
 			HTTPEnabled: true}),
-		server.WithDispatchCacheConfig(server.CacheConfig{Enabled: true, Metrics: true}),
-		server.WithNamespaceCacheConfig(server.CacheConfig{Enabled: true, Metrics: true}),
-		server.WithClusterDispatchCacheConfig(server.CacheConfig{Enabled: true, Metrics: true}),
+		//server.WithDispatchCacheConfig(server.CacheConfig{
+		//	Name:    "DispatchCache",
+		//	Metrics: true,
+		//	Enabled: true,
+		//}),
+		//server.WithNamespaceCacheConfig(server.CacheConfig{
+		//	Name: "NamespaceCache",
+		//	//MaxCost:     "",
+		//	//NumCounters: 0,
+		//	Metrics: true,
+		//	Enabled: true,
+		//}),
+		//server.WithClusterDispatchCacheConfig(server.CacheConfig{
+		//	Name: "ClusterCache",
+		//	//MaxCost:     "",
+		//	//NumCounters: 0,
+		//	Metrics: true,
+		//	Enabled: true,
+		//}),
 		server.WithDatastore(ds),
 		server.WithDispatchClientMetricsPrefix("coder_client"),
 		server.WithDispatchClientMetricsEnabled(true),
