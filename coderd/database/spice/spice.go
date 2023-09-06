@@ -74,12 +74,15 @@ func DB(ctx context.Context) error {
 
 func newServer(ctx context.Context) (server.RunnableServer, error) {
 	ds, err := datastore.NewDatastore(ctx,
-		datastore.WithEngine(datastore.PostgresEngine),
 		datastore.DefaultDatastoreConfig().ToOption(),
+		datastore.WithEngine(datastore.PostgresEngine),
 		datastore.WithRequestHedgingEnabled(false),
+		// must run migrations first
+		// spicedb migrate --datastore-engine=postgres --datastore-conn-uri "postgres://postgres:postgres@localhost:5432/spicedb?sslmode=disable" head
+		datastore.WithURI(`postgres://postgres:postgres@localhost:5432/spicedb?sslmode=disable`),
 	)
 	if err != nil {
-		log.Fatalf("unable to start memdb datastore: %s", err)
+		log.Fatalf("unable to start postgres datastore: %s", err)
 	}
 
 	configOpts := []server.ConfigOption{
