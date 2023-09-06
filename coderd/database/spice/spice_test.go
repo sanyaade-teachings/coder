@@ -11,4 +11,5 @@ import (
 func TestSpiceDB(t *testing.T) {
 	err := spice.DB(context.Background())
 	require.NoError(t, err)
+	//time.Sleep(time.Second * 1000)
 }

@@ -5,6 +5,18 @@ import (
 	_ "embed"
 	"log"
 
+	"google.golang.org/protobuf/encoding/protojson"
+
+	"golang.org/x/xerrors"
+
+	"google.golang.org/grpc/metadata"
+
+	"google.golang.org/grpc"
+
+	"github.com/authzed/authzed-go/pkg/responsemeta"
+
+	"github.com/authzed/authzed-go/pkg/requestmeta"
+
 	v1 "github.com/authzed/authzed-go/proto/authzed/api/v1"
 	"github.com/authzed/spicedb/pkg/cmd/datastore"
 	"github.com/authzed/spicedb/pkg/cmd/server"
@@ -36,38 +48,85 @@ func DB(ctx context.Context) error {
 	}()
 
 	_, err = schemaSrv.WriteSchema(ctx, &v1.WriteSchemaRequest{
-		Schema: schema,
+		Schema: `definition user {}
+                 definition resource {
+                   relation viewer: user
+                   permission view = viewer
+                 }`,
 	})
 	if err != nil {
 		return err
 	}
 
-	resp, err := permSrv.WriteRelationships(ctx, &v1.WriteRelationshipsRequest{})
+	resp, err := permSrv.WriteRelationships(ctx, &v1.WriteRelationshipsRequest{Updates: []*v1.RelationshipUpdate{
+		{
+			Operation: v1.RelationshipUpdate_OPERATION_TOUCH,
+			Relationship: &v1.Relationship{
+				Resource: &v1.ObjectReference{
+					ObjectId:   "my_book",
+					ObjectType: "resource",
+				},
+				Relation: "viewer",
+				Subject: &v1.SubjectReference{
+					Object: &v1.ObjectReference{
+						ObjectId:   "john_doe",
+						ObjectType: "user",
+					},
+				},
+			},
+		},
+	}})
 	if err != nil {
 		return err
 	}
 
 	token := resp.GetWrittenAt()
-	// This will not work yet!
-	checkResp, err := permSrv.CheckPermission(ctx, &v1.CheckPermissionRequest{
-		Permission:  "view",
-		Consistency: &v1.Consistency{Requirement: &v1.Consistency_AtLeastAsFresh{AtLeastAsFresh: token}},
-		Resource: &v1.ObjectReference{
-			ObjectId:   "my_book",
-			ObjectType: "resource",
-		},
-		Subject: &v1.SubjectReference{
-			Object: &v1.ObjectReference{
-				ObjectId:   "john_doe",
-				ObjectType: "user",
-			},
-		},
-	})
-	if err != nil {
-		log.Fatal("unable to issue PermissionCheck: %w", err)
-	}
 
-	log.Printf("check result: %s", checkResp.Permissionship.String())
+	for i := 0; i < 10; i++ {
+		var trailerMD metadata.MD
+		ctx = requestmeta.AddRequestHeaders(ctx, requestmeta.RequestDebugInformation)
+		checkResp, err := permSrv.CheckPermission(ctx, &v1.CheckPermissionRequest{
+			Permission:  "view",
+			Consistency: &v1.Consistency{Requirement: &v1.Consistency_AtLeastAsFresh{AtLeastAsFresh: token}},
+			Resource: &v1.ObjectReference{
+				ObjectId:   "my_book",
+				ObjectType: "resource",
+			},
+			Subject: &v1.SubjectReference{
+				Object: &v1.ObjectReference{
+					ObjectId:   "john_doe",
+					ObjectType: "user",
+				},
+			},
+		}, grpc.Trailer(&trailerMD))
+		if err != nil {
+			log.Fatal("unable to issue PermissionCheck: %w", err)
+		} else {
+
+			// All this debug stuff just shows the trace of the check
+			// with information like cache hits.
+			found, err := responsemeta.GetResponseTrailerMetadata(trailerMD, responsemeta.DebugInformation)
+			if err != nil {
+				return xerrors.Errorf("unable to get response metadata: %w", err)
+			}
+
+			debugInfo := &v1.DebugInformation{}
+			err = protojson.Unmarshal([]byte(found), debugInfo)
+			if err != nil {
+				return err
+			}
+
+			if debugInfo.Check == nil {
+				log.Println("No trace found for the check")
+			} else {
+				tp := NewTreePrinter()
+				DisplayCheckTrace(debugInfo.Check, tp, false)
+				tp.Print()
+			}
+
+		}
+		log.Printf("check result: %s", checkResp.Permissionship.String())
+	}
 
 	return nil
 }
@@ -83,6 +142,9 @@ func newServer(ctx context.Context) (server.RunnableServer, error) {
 	)
 	if err != nil {
 		log.Fatalf("unable to start postgres datastore: %s", err)
+	}
+	ds = &DatastoreWrapper{
+		Datastore: ds,
 	}
 
 	configOpts := []server.ConfigOption{
@@ -100,11 +162,14 @@ func newServer(ctx context.Context) (server.RunnableServer, error) {
 		server.WithMetricsAPI(util.HTTPServerConfig{
 			HTTPAddress: "localhost:50000",
 			HTTPEnabled: true}),
-		// disable caching since it's all in memory
-		server.WithDispatchCacheConfig(server.CacheConfig{Enabled: false, Metrics: false}),
-		server.WithNamespaceCacheConfig(server.CacheConfig{Enabled: false, Metrics: false}),
-		server.WithClusterDispatchCacheConfig(server.CacheConfig{Enabled: false, Metrics: false}),
+		server.WithDispatchCacheConfig(server.CacheConfig{Enabled: true, Metrics: true}),
+		server.WithNamespaceCacheConfig(server.CacheConfig{Enabled: true, Metrics: true}),
+		server.WithClusterDispatchCacheConfig(server.CacheConfig{Enabled: true, Metrics: true}),
 		server.WithDatastore(ds),
+		server.WithDispatchClientMetricsPrefix("coder_client"),
+		server.WithDispatchClientMetricsEnabled(true),
+		server.WithDispatchClusterMetricsPrefix("cluster"),
+		server.WithDispatchClusterMetricsEnabled(true),
 	}
 
 	return server.NewConfigWithOptionsAndDefaults(configOpts...).Complete(ctx)
