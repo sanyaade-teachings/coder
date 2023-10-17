@@ -46,7 +46,7 @@ func Generate() string {
 	}
 
 	var output strings.Builder
-	output.WriteString(`// Code generated. DO NOT EDIT.`)
+	output.WriteString(`// Package relationships code generated. DO NOT EDIT.`)
 	output.WriteString("\n")
 	output.WriteString(`package relationships`)
 	output.WriteString("\n")

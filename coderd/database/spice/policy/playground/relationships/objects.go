@@ -1,4 +1,4 @@
-// Code generated. DO NOT EDIT.
+// Package relationships code generated. DO NOT EDIT.
 package relationships
 
 import v1 "github.com/authzed/authzed-go/proto/authzed/api/v1"
