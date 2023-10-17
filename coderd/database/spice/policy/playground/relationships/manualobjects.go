@@ -5,36 +5,115 @@ import (
 	"sort"
 	"strings"
 
+	core "github.com/authzed/spicedb/pkg/proto/core/v1"
+
 	v1 "github.com/authzed/authzed-go/proto/authzed/api/v1"
 	"github.com/authzed/spicedb/pkg/tuple"
 )
 
 func NewRelationships() *Relationships {
 	return &Relationships{
-		Relations: []v1.Relationship{},
+		Relations:   []v1.Relationship{},
+		True:        []v1.Relationship{},
+		False:       []v1.Relationship{},
+		Validations: []v1.Relationship{},
 	}
 }
 
 type Relationships struct {
-	Relations []v1.Relationship
+	Relations   []v1.Relationship
+	True        []v1.Relationship
+	False       []v1.Relationship
+	Validations []v1.Relationship
 }
 
+func (r *Relationships) AddValidation(relationship v1.Relationship) {
+	r.Validations = append(r.Validations, relationship)
+}
+
+// AddRelation adds the graph relation for the playground.
 func (r *Relationships) AddRelation(relationship v1.Relationship) {
 	r.Relations = append(r.Relations, relationship)
 }
 
-//func (r *Relationships)
+func (r *Relationships) AssertTrue(relationship v1.Relationship) {
+	r.True = append(r.True, relationship)
+}
+
+func (r *Relationships) AssertFalse(relationship v1.Relationship) {
+	r.False = append(r.False, relationship)
+}
 
 func (r Relationships) AllRelations() []v1.Relationship {
 	return r.Relations
 }
 
+func (r Relationships) AllFalse() []v1.Relationship {
+	return r.False
+}
+
+func (r Relationships) AllTrue() []v1.Relationship {
+	return r.True
+}
+
+func (r Relationships) AllValidations() []v1.Relationship {
+	return r.Validations
+}
+
 type ObjectWithRelationships interface {
 	AllRelations() []v1.Relationship
+	AllTrue() []v1.Relationship
+	AllFalse() []v1.Relationship
+	AllValidations() []v1.Relationship
 	Type() string
+	Object() *v1.ObjectReference
 }
 
 var allObjects []ObjectWithRelationships
+
+func AllAssertTrue() []string {
+	all := make([]string, 0)
+	for _, o := range allObjects {
+		for _, t := range o.AllTrue() {
+			rStr, err := tuple.StringRelationship(&t)
+			if err != nil {
+				panic(err)
+			}
+			all = append(all, rStr)
+		}
+	}
+	return all
+}
+
+func AllValidations() map[string][]string {
+	all := make(map[string][]string, 0)
+	for _, o := range allObjects {
+		for _, t := range o.AllValidations() {
+			rStr := tuple.StringONR(&core.ObjectAndRelation{
+				Namespace: t.Resource.ObjectType,
+				ObjectId:  t.Resource.ObjectId,
+				Relation:  t.Relation,
+			})
+
+			all[rStr] = []string{}
+		}
+	}
+	return all
+}
+
+func AllAssertFalse() []string {
+	all := make([]string, 0)
+	for _, o := range allObjects {
+		for _, t := range o.AllFalse() {
+			rStr, err := tuple.StringRelationship(&t)
+			if err != nil {
+				panic(err)
+			}
+			all = append(all, rStr)
+		}
+	}
+	return all
+}
 
 func AllRelationsToStrings() string {
 	// group all the objects

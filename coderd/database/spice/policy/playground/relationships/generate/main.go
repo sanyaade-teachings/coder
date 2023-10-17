@@ -37,6 +37,7 @@ func Generate() string {
 
 	tpl := template.New("zanzobjects").Funcs(template.FuncMap{
 		"capitalize": capitalize,
+		"unique":     uniquePermissions,
 	})
 
 	tpl, err = tpl.Parse(templateText)
@@ -45,6 +46,8 @@ func Generate() string {
 	}
 
 	var output strings.Builder
+	output.WriteString(`// Code generated. DO NOT EDIT.`)
+	output.WriteString("\n")
 	output.WriteString(`package relationships`)
 	output.WriteString("\n")
 	output.WriteString(`import v1 "github.com/authzed/authzed-go/proto/authzed/api/v1"`)
@@ -62,6 +65,7 @@ func Generate() string {
 
 	formatted, err := format.Source([]byte(output.String()))
 	if err != nil {
+		fmt.Println(output.String())
 		panic(err)
 	}
 	return string(formatted)
@@ -71,7 +75,13 @@ type objectDefinition struct {
 	// The core type
 	*core.NamespaceDefinition
 
+	Permissions     []objectPermission
 	DirectRelations []objectDirectRelation
+}
+
+type objectPermission struct {
+	Permission   string
+	FunctionName string
 }
 
 type objectDirectRelation struct {
@@ -85,14 +95,15 @@ func newDef(obj *core.NamespaceDefinition) objectDefinition {
 		NamespaceDefinition: obj,
 	}
 	rels := make([]objectDirectRelation, 0)
-
-	//if obj.Name == "group" {
-	//	fmt.Println("")
-	//}
+	perms := make([]objectPermission, 0)
 
 	for _, r := range obj.Relation {
 		if r.UsersetRewrite != nil {
 			// This is a permission.
+			perms = append(perms, objectPermission{
+				Permission:   r.Name,
+				FunctionName: capitalize(r.Name),
+			})
 			continue
 		}
 
@@ -144,5 +155,20 @@ func newDef(obj *core.NamespaceDefinition) objectDefinition {
 		rels = append(rels, multipleSubjects...)
 	}
 	d.DirectRelations = rels
+	d.Permissions = perms
 	return d
+}
+
+func uniquePermissions(perms []objectPermission) []objectPermission {
+	seen := make(map[string]struct{})
+	out := make([]objectPermission, 0)
+	for _, perm := range perms {
+		perm := perm
+		if _, ok := seen[perm.Permission]; ok {
+			continue
+		}
+		seen[perm.Permission] = struct{}{}
+		out = append(out, perm)
+	}
+	return out
 }

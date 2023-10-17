@@ -20,11 +20,15 @@ func (obj *Obj{{ capitalize $outerName }}) Type() string {
 	return "{{ .Name }}"
 }
 
+func (obj *Obj{{ capitalize $outerName }}) Object() *v1.ObjectReference {
+	return obj.Obj
+}
+
 
 {{ range $index, $element := .DirectRelations }}
 {{ if eq $element.Subject.Object.ObjectId "*" }}
 func (obj *Obj{{ capitalize $outerName }}) {{ capitalize $element.RelationName }}Wildcard() *Obj{{ capitalize $outerName }}{
-	obj.Add(v1.Relationship{
+	obj.AddRelation(v1.Relationship{
 		Resource: obj.Obj,
 		Relation: "{{ $element.RelationName }}",
 		Subject: &v1.SubjectReference{
@@ -44,7 +48,7 @@ func (obj *Obj{{ capitalize $outerName }}) {{ capitalize $element.RelationName }
 func (obj *Obj{{ capitalize $outerName }}) {{ capitalize $element.FunctionName }}(subs ...*Obj{{ capitalize $element.Subject.Object.ObjectType }}) *Obj{{ capitalize $outerName }}{
 	for i := range subs {
 		sub := subs[i]
-		obj.Add(v1.Relationship{
+		obj.AddRelation(v1.Relationship{
 			Resource: obj.Obj,
 			Relation: "{{ $element.RelationName }}",
 			Subject: &v1.SubjectReference{
@@ -57,5 +61,52 @@ func (obj *Obj{{ capitalize $outerName }}) {{ capitalize $element.FunctionName }
 	return obj
 }
 {{ end }}
+{{ end }}
+
+
+{{ range $index, $element := unique .Permissions }}
+func (obj *Obj{{ capitalize $outerName }}) Validate{{ $element.FunctionName }}() *Obj{{ capitalize $outerName }} {
+	obj.AddValidation(v1.Relationship{
+		Resource: obj.Obj,
+		Relation: "{{ $element.Permission }}",
+		OptionalCaveat: nil,
+	})
+	return obj
+}
+{{ end }}
+
+
+{{ range $index, $element := .Permissions }}
+func (obj *Obj{{ capitalize $outerName }}) Can{{ capitalize $element.FunctionName }}By(subs ...ObjectWithRelationships) *Obj{{ capitalize $outerName }}{
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertTrue(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "{{ $element.Permission }}",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *Obj{{ capitalize $outerName }}) Cannot{{ capitalize $element.FunctionName }}By(subs ...ObjectWithRelationships) *Obj{{ capitalize $outerName }}{
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertFalse(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "{{ $element.Permission }}",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
 
 {{ end }}

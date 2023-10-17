@@ -27,7 +27,7 @@ func GenerateRelationships() {
 	// Groups
 	groupEveryone := Group("everyone").MemberWildcard()
 	groupHR := Group("hr").MemberUser(camilla)
-	groupFinance := Group("finance").MemberUser(camilla, ammar, kyle, shark)
+	groupFinance := Group("finance").MemberUser(ammar, kyle, shark)
 	groupCostControl := Group("cost-control").MemberGroup(groupFinance).MemberUser(dean, colin)
 	groupEngineers := Group("engineers").MemberUser(ammar, colin, dean, jon, kayla, kira, kyle, steven)
 	groupMarketing := Group("marketing").MemberUser(katherine, ammar)
@@ -76,4 +76,11 @@ func GenerateRelationships() {
 		ConnectorUser(steven)
 	devTemplate.Workspace(stevenWorkspace)
 
+	// Add some assertions
+	stevenWorkspace.
+		CanViewBy(steven).
+		CannotViewBy(camilla)
+
+	// Validations enumerate who can do the given action.
+	stevenWorkspace.ValidateView().ValidateSsh()
 }
