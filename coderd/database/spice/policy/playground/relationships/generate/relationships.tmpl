@@ -1,0 +1,61 @@
+type Obj{{ capitalize .Name }} struct {
+	Obj *v1.ObjectReference
+	*Relationships
+}
+
+func {{ capitalize .Name }}(id string) *Obj{{ capitalize .Name }} {
+	o := &Obj{{ capitalize .Name }}{
+		Obj: &v1.ObjectReference{
+			ObjectType: "{{ .Name }}",
+			ObjectId:   id,
+		},
+		Relationships: NewRelationships(),
+	}
+	allObjects = append(allObjects, o)
+	return o
+}
+
+{{ $outerName := .Name }}
+func (obj *Obj{{ capitalize $outerName }}) Type() string {
+	return "{{ .Name }}"
+}
+
+
+{{ range $index, $element := .DirectRelations }}
+{{ if eq $element.Subject.Object.ObjectId "*" }}
+func (obj *Obj{{ capitalize $outerName }}) {{ capitalize $element.RelationName }}Wildcard() *Obj{{ capitalize $outerName }}{
+	obj.Add(v1.Relationship{
+		Resource: obj.Obj,
+		Relation: "{{ $element.RelationName }}",
+		Subject: &v1.SubjectReference{
+			Object: &v1.ObjectReference {
+				ObjectType: "{{ $element.Subject.Object.ObjectType }}",
+				ObjectId: "*",
+			},
+			OptionalRelation: "{{ $element.Subject.OptionalRelation }}",
+		},
+		OptionalCaveat: nil,
+	})
+	return obj
+}
+
+{{ else }}
+
+func (obj *Obj{{ capitalize $outerName }}) {{ capitalize $element.FunctionName }}(subs ...*Obj{{ capitalize $element.Subject.Object.ObjectType }}) *Obj{{ capitalize $outerName }}{
+	for i := range subs {
+		sub := subs[i]
+		obj.Add(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "{{ $element.RelationName }}",
+			Subject: &v1.SubjectReference{
+				Object: sub.Obj,
+				OptionalRelation: "{{ $element.Subject.OptionalRelation }}",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+{{ end }}
+
+{{ end }}
