@@ -126,6 +126,22 @@ func (obj *ObjTeam) Platform(subs ...*ObjPlatform) *ObjTeam {
 	return obj
 }
 
+func (obj *ObjTeam) Parent(subs ...*ObjTeam) *ObjTeam {
+	for i := range subs {
+		sub := subs[i]
+		obj.AddRelation(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "parent",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
 func (obj *ObjTeam) MemberGroup(subs ...*ObjGroup) *ObjTeam {
 	for i := range subs {
 		sub := subs[i]
@@ -542,10 +558,10 @@ func (obj *ObjTeam) Template_insights_viewerUser(subs ...*ObjUser) *ObjTeam {
 	return obj
 }
 
-func (obj *ObjTeam) ValidateMembership() *ObjTeam {
+func (obj *ObjTeam) ValidateDirect_membership() *ObjTeam {
 	obj.AddValidation(v1.Relationship{
 		Resource:       obj.Obj,
-		Relation:       "membership",
+		Relation:       "direct_membership",
 		OptionalCaveat: nil,
 	})
 	return obj
@@ -659,12 +675,12 @@ func (obj *ObjTeam) ValidateCreate_template() *ObjTeam {
 	return obj
 }
 
-func (obj *ObjTeam) CanMembershipBy(subs ...ObjectWithRelationships) *ObjTeam {
+func (obj *ObjTeam) CanDirect_membershipBy(subs ...ObjectWithRelationships) *ObjTeam {
 	for i := range subs {
 		sub := subs[i]
 		obj.AssertTrue(v1.Relationship{
 			Resource: obj.Obj,
-			Relation: "membership",
+			Relation: "direct_membership",
 			Subject: &v1.SubjectReference{
 				Object:           sub.Object(),
 				OptionalRelation: "",
@@ -675,12 +691,12 @@ func (obj *ObjTeam) CanMembershipBy(subs ...ObjectWithRelationships) *ObjTeam {
 	return obj
 }
 
-func (obj *ObjTeam) CannotMembershipBy(subs ...ObjectWithRelationships) *ObjTeam {
+func (obj *ObjTeam) CannotDirect_membershipBy(subs ...ObjectWithRelationships) *ObjTeam {
 	for i := range subs {
 		sub := subs[i]
 		obj.AssertFalse(v1.Relationship{
 			Resource: obj.Obj,
-			Relation: "membership",
+			Relation: "direct_membership",
 			Subject: &v1.SubjectReference{
 				Object:           sub.Object(),
 				OptionalRelation: "",

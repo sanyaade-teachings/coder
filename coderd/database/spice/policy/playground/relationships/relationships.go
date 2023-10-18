@@ -28,34 +28,50 @@ func GenerateRelationships() {
 	groupEveryone := Group("everyone").MemberWildcard()
 	groupHR := Group("hr").MemberUser(camilla)
 	groupFinance := Group("finance").MemberUser(ammar, kyle, shark)
-	groupCostControl := Group("cost-control").MemberGroup(groupFinance).MemberUser(dean, colin)
+	groupCostControl := Group("cost-control").MemberUser(ammar, kyle, dean, colin)
 	groupEngineers := Group("engineers").MemberUser(ammar, colin, dean, jon, kayla, kira, kyle, steven)
 	groupMarketing := Group("marketing").MemberUser(katherine, ammar)
 	groupSales := Group("sales").MemberUser(shark, eric)
 
 	// Teams
-	teamCompany := Team("company").Platform(platform)
-	teamLegal := Team("legal").Platform(platform)
-	teamMarketing := Team("marketing").Platform(platform)
+	teamCompany := Team("company").
+		Platform(platform).
+		// Cost control can see all workspaces
+		Workspace_viewerGroup(groupCostControl)
+	teamLegal := Team("legal").Platform(platform).
+		Parent(teamCompany)
+	teamMarketing := Team("marketing").Platform(platform).
+		Parent(teamCompany)
+
+	// company
+	// ├── legal
+	// ├── marketing
+	// └── engineering
+	//      ├── developers
+	//      └── technical
+	teamEngineering := Team("engineering").Platform(platform).
+		Parent(teamCompany)
+
 	// People who write code
-	teamDevelopers := Team("developers").Platform(platform)
+	teamDevelopers := Team("developers").Platform(platform).
+		Parent(teamEngineering)
 	// People who tinker
-	teamTechnical := Team("technical").Platform(platform)
-	//teamCustomerSuccess := Team("customer-success").Platform(platform) // Customer solutions
-	//teamEngineering := Team("engineering").Platform(platform)
+	teamTechnical := Team("technical").Platform(platform).
+		Parent(teamEngineering)
 
 	// Nest some teams
 	// TODO: This is currently unsupported
 
 	// Assign groups to teams
-	teamCompany.MemberGroup(groupEveryone)
-	teamLegal.MemberGroup(groupHR, groupFinance)
-	teamMarketing.MemberGroup(groupMarketing)
-	teamDevelopers.
-		Workspace_creatorGroup(groupEngineers).
+	teamCompany.MemberGroup(groupEveryone).
 		// Cost control groups can edit workspaces & delete them
 		Workspace_editorGroup(groupCostControl).
 		Workspace_deletorGroup(groupCostControl)
+	teamLegal.MemberGroup(groupHR, groupFinance)
+	teamMarketing.MemberGroup(groupMarketing)
+
+	teamDevelopers.
+		Workspace_creatorGroup(groupEngineers)
 
 	teamTechnical.
 		Workspace_creatorGroup(groupEngineers, groupSales).
@@ -78,9 +94,9 @@ func GenerateRelationships() {
 
 	// Add some assertions
 	stevenWorkspace.
-		CanViewBy(steven).
-		CannotViewBy(camilla)
+		CanViewBy(steven, ammar, kyle).
+		CannotViewBy(camilla, jon)
 
 	// Validations enumerate who can do the given action.
-	stevenWorkspace.ValidateView().ValidateSsh()
+	stevenWorkspace.ValidateView().ValidateSsh().ValidateEdit()
 }

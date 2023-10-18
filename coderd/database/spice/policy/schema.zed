@@ -14,12 +14,16 @@ definition platform {
 	permission super_admin = administrator
 }
 
+
 // team is a collection of resources.
 // TODO: Should we call this a namespace?
 definition team {
 	// platform relation is the super admin level. All super-admin type permissions
 	// are passed through the team level.
 	relation platform: platform
+
+	// parent allows nesting teams
+	relation parent: team
 
 	// Teams have their own roles for user's to interact with team resources.
 	// Each role can be either a group or a user.
@@ -67,8 +71,9 @@ definition team {
 	 * Other Roles *
 	 *******************/
 
-	// membership needs to include all ways in which someone is a member of this team.
-	permission membership = member +
+	// direct_membership needs to include all ways in which someone is a member of this team.
+	// This does not include parent team members.
+	permission direct_membership = member +
 		workspace_viewer + workspace_creator + workspace_deletor + workspace_version_selector + dangerous_workspace_connector + workspace_editor +
 		template_viewer + template_creator + template_deletor + template_editor
 
@@ -76,24 +81,24 @@ definition team {
 	 * Workspace Permissions *
 	 *************************/
 	// view all workspaces owned by the team
-	permission view_workspaces = platform->super_admin + workspace_viewer
-	permission edit_workspaces = platform->super_admin + workspace_editor
-	permission select_workspace_version = platform->super_admin + workspace_version_selector
-	permission delete_workspaces = platform->super_admin + workspace_deletor
-	permission connect_workspaces = dangerous_workspace_connector
+	permission view_workspaces = platform->super_admin + workspace_viewer + parent->view_workspaces
+	permission edit_workspaces = platform->super_admin + workspace_editor + parent->edit_workspaces
+	permission select_workspace_version = platform->super_admin + workspace_version_selector + parent->select_workspace_version
+	permission delete_workspaces = platform->super_admin + workspace_deletor + parent->delete_workspaces
+	permission connect_workspaces = dangerous_workspace_connector + parent->connect_workspaces
 	// create_workspace is on the team level object. A workspace that is created is owned by the team
 	// and the application should setup the correct permissions/relations for the new resource.
-	permission create_workspace = platform->super_admin + workspace_creator
+	permission create_workspace = platform->super_admin + workspace_creator + parent->create_workspace
 
 	/************************
 	 * Template Permissions *
 	 ************************/
-	permission view_templates = platform->super_admin + template_viewer
-	permission view_template_insights = platform->super_admin + template_insights_viewer
-	permission edit_templates = platform->super_admin + template_editor
-	permission delete_templates = platform->super_admin + template_deletor
-	permission manage_template_permissions = platform->super_admin + template_permission_manager
-	permission create_template = platform->super_admin + template_creator
+	permission view_templates = platform->super_admin + template_viewer + parent->view_templates
+	permission view_template_insights = platform->super_admin + template_insights_viewer + parent->view_template_insights
+	permission edit_templates = platform->super_admin + template_editor + parent->edit_templates
+	permission delete_templates = platform->super_admin + template_deletor + parent->delete_templates
+	permission manage_template_permissions = platform->super_admin + template_permission_manager + parent->manage_template_permissions
+	permission create_template = platform->super_admin + template_creator + parent->create_template
 }
 
 // group is a collection of users and operates exactly like a user from
@@ -129,12 +134,12 @@ definition workspace {
 		// Some perms require view as well
 		edit + delete + select_template_version + ssh +
 		// Give view permissons to any role that requires reading the workspace to conduct their actions.
-		owner->view_workspaces + (viewer & owner->membership)
-	permission edit = owner->edit_workspaces + (editor & owner->membership)
-	permission delete = owner->delete_workspaces + (deletor & owner->membership)
+		owner->view_workspaces + viewer
+	permission edit = owner->edit_workspaces + editor
+	permission delete = owner->delete_workspaces + deletor
 	// TODO: Maybe a caveat to check if the selected version is the active template version, and if that is allowed.
-	permission select_template_version = owner->select_workspace_version + (selector & owner->membership)
-	permission ssh = owner->connect_workspaces + (connector & owner->membership)
+	permission select_template_version = owner->select_workspace_version + selector
+	permission ssh = owner->connect_workspaces + connector
 }
 
 definition workspace_build {
