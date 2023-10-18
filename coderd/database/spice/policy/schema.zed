@@ -67,6 +67,15 @@ definition team {
 	relation template_permission_manager: group#membership | user
 	relation template_insights_viewer: group#membership | user
 
+
+	/*******************
+	 * Provisioner Roles *
+	 *******************/
+	relation provisioner_viewer: group#membership | user
+	relation provisioner_creator: group#membership | user
+	relation provisioner_deletor: group#membership | user
+	relation provisioner_editor: group#membership | user
+
 	/*******************
 	 * Other Roles *
 	 *******************/
@@ -98,7 +107,19 @@ definition team {
 	permission edit_templates = platform->super_admin + template_editor + parent->edit_templates
 	permission delete_templates = platform->super_admin + template_deletor + parent->delete_templates
 	permission manage_template_permissions = platform->super_admin + template_permission_manager + parent->manage_template_permissions
+	// Creating a template, version, and file are all the same permissions
 	permission create_template = platform->super_admin + template_creator + parent->create_template
+	permission create_template_version = create_template
+	permission create_file = create_template
+
+
+	/************************
+	 * Provisioner Permissions *
+	 ************************/
+	permission view_provisioners = platform->super_admin + template_viewer + parent->view_provisioners
+	permission edit_provisioners = platform->super_admin + template_editor + parent->edit_provisioners
+	permission delete_provisioners = platform->super_admin + template_deletor + parent->delete_provisioners
+	permission create_provisioners = platform->super_admin + template_creator + parent->create_provisioners
 }
 
 // group is a collection of users and operates exactly like a user from
@@ -182,10 +203,12 @@ definition template {
 	// workspace relates a given workspace to a template. This allows
 	// 'view' permission to be granted through the workspace, so a person who can
 	// view a workspce, can also view the template it is using.
+	// TODO: Add deleted caveat?
 	relation workspace: workspace
 
 	permission view = owner->template_viewer + workspace->view
 	permission view_insights = owner->view_template_insights
+	// Edit allows adding and promoting template versions.
 	permission edit = owner->edit_templates
 	permission delete = owner->delete_templates
 	permission edit_pemissions = owner->manage_template_permissions
@@ -195,4 +218,25 @@ definition template_version {
 	relation template: template
 
 	permission view = template->view
+}
+
+definition file {
+	relation template_version: template_version
+
+	permission view = template_version -> view
+}
+
+definition provisioner {
+	// owning team for pulling permissions through.
+	relation owner: team
+
+	permission view = owner -> view_provisioners
+}
+
+definition job {
+	relation template_version: template_version
+	relation workspace_build: workspace_build
+	// dry runs?
+
+	permission view = template_version->view + workspace_build->view
 }
