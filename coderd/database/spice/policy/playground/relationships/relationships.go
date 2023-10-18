@@ -81,16 +81,15 @@ func GenerateRelationships() {
 	// Make some resources!
 	devTemplate := Template("dev-template").Owner(teamDevelopers)
 	devVersion := devTemplate.Version("active")
+	devTemplate.CannotUseBy(teamMarketing)
 	var _ = devVersion
 
-	stevenWorkspace := WorkspaceWithDeps("steven-workspace").
-		Owner(teamDevelopers).
+	stevenWorkspace := WorkspaceWithDeps("steven-workspace", teamDevelopers, devTemplate).
 		ViewerUser(steven).
 		EditorUser(steven).
 		DeletorUser(steven).
 		SelectorUser(steven).
 		ConnectorUser(steven)
-	devTemplate.Workspace(stevenWorkspace)
 
 	// Add some assertions
 	stevenWorkspace.

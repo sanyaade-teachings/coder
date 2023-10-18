@@ -212,6 +212,9 @@ definition template {
 	permission edit = owner->edit_templates
 	permission delete = owner->delete_templates
 	permission edit_pemissions = owner->manage_template_permissions
+
+	// Use is permitted by the owning team.
+	permission use = owner
 }
 
 definition template_version {
@@ -231,6 +234,9 @@ definition provisioner {
 	relation owner: team
 
 	permission view = owner -> view_provisioners
+
+	// Use is permitted by the owning team.
+	permission use = owner
 }
 
 definition job {

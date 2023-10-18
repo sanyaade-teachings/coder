@@ -558,6 +558,134 @@ func (obj *ObjTeam) Template_insights_viewerUser(subs ...*ObjUser) *ObjTeam {
 	return obj
 }
 
+func (obj *ObjTeam) Provisioner_viewerGroup(subs ...*ObjGroup) *ObjTeam {
+	for i := range subs {
+		sub := subs[i]
+		obj.AddRelation(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "provisioner_viewer",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "membership",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjTeam) Provisioner_viewerUser(subs ...*ObjUser) *ObjTeam {
+	for i := range subs {
+		sub := subs[i]
+		obj.AddRelation(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "provisioner_viewer",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjTeam) Provisioner_creatorGroup(subs ...*ObjGroup) *ObjTeam {
+	for i := range subs {
+		sub := subs[i]
+		obj.AddRelation(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "provisioner_creator",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "membership",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjTeam) Provisioner_creatorUser(subs ...*ObjUser) *ObjTeam {
+	for i := range subs {
+		sub := subs[i]
+		obj.AddRelation(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "provisioner_creator",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjTeam) Provisioner_deletorGroup(subs ...*ObjGroup) *ObjTeam {
+	for i := range subs {
+		sub := subs[i]
+		obj.AddRelation(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "provisioner_deletor",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "membership",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjTeam) Provisioner_deletorUser(subs ...*ObjUser) *ObjTeam {
+	for i := range subs {
+		sub := subs[i]
+		obj.AddRelation(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "provisioner_deletor",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjTeam) Provisioner_editorGroup(subs ...*ObjGroup) *ObjTeam {
+	for i := range subs {
+		sub := subs[i]
+		obj.AddRelation(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "provisioner_editor",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "membership",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjTeam) Provisioner_editorUser(subs ...*ObjUser) *ObjTeam {
+	for i := range subs {
+		sub := subs[i]
+		obj.AddRelation(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "provisioner_editor",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
 func (obj *ObjTeam) ValidateDirect_membership() *ObjTeam {
 	obj.AddValidation(v1.Relationship{
 		Resource:       obj.Obj,
@@ -670,6 +798,60 @@ func (obj *ObjTeam) ValidateCreate_template() *ObjTeam {
 	obj.AddValidation(v1.Relationship{
 		Resource:       obj.Obj,
 		Relation:       "create_template",
+		OptionalCaveat: nil,
+	})
+	return obj
+}
+
+func (obj *ObjTeam) ValidateCreate_template_version() *ObjTeam {
+	obj.AddValidation(v1.Relationship{
+		Resource:       obj.Obj,
+		Relation:       "create_template_version",
+		OptionalCaveat: nil,
+	})
+	return obj
+}
+
+func (obj *ObjTeam) ValidateCreate_file() *ObjTeam {
+	obj.AddValidation(v1.Relationship{
+		Resource:       obj.Obj,
+		Relation:       "create_file",
+		OptionalCaveat: nil,
+	})
+	return obj
+}
+
+func (obj *ObjTeam) ValidateView_provisioners() *ObjTeam {
+	obj.AddValidation(v1.Relationship{
+		Resource:       obj.Obj,
+		Relation:       "view_provisioners",
+		OptionalCaveat: nil,
+	})
+	return obj
+}
+
+func (obj *ObjTeam) ValidateEdit_provisioners() *ObjTeam {
+	obj.AddValidation(v1.Relationship{
+		Resource:       obj.Obj,
+		Relation:       "edit_provisioners",
+		OptionalCaveat: nil,
+	})
+	return obj
+}
+
+func (obj *ObjTeam) ValidateDelete_provisioners() *ObjTeam {
+	obj.AddValidation(v1.Relationship{
+		Resource:       obj.Obj,
+		Relation:       "delete_provisioners",
+		OptionalCaveat: nil,
+	})
+	return obj
+}
+
+func (obj *ObjTeam) ValidateCreate_provisioners() *ObjTeam {
+	obj.AddValidation(v1.Relationship{
+		Resource:       obj.Obj,
+		Relation:       "create_provisioners",
 		OptionalCaveat: nil,
 	})
 	return obj
@@ -1081,6 +1263,198 @@ func (obj *ObjTeam) CannotCreate_templateBy(subs ...ObjectWithRelationships) *Ob
 		obj.AssertFalse(v1.Relationship{
 			Resource: obj.Obj,
 			Relation: "create_template",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjTeam) CanCreate_template_versionBy(subs ...ObjectWithRelationships) *ObjTeam {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertTrue(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "create_template_version",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjTeam) CannotCreate_template_versionBy(subs ...ObjectWithRelationships) *ObjTeam {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertFalse(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "create_template_version",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjTeam) CanCreate_fileBy(subs ...ObjectWithRelationships) *ObjTeam {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertTrue(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "create_file",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjTeam) CannotCreate_fileBy(subs ...ObjectWithRelationships) *ObjTeam {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertFalse(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "create_file",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjTeam) CanView_provisionersBy(subs ...ObjectWithRelationships) *ObjTeam {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertTrue(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "view_provisioners",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjTeam) CannotView_provisionersBy(subs ...ObjectWithRelationships) *ObjTeam {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertFalse(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "view_provisioners",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjTeam) CanEdit_provisionersBy(subs ...ObjectWithRelationships) *ObjTeam {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertTrue(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "edit_provisioners",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjTeam) CannotEdit_provisionersBy(subs ...ObjectWithRelationships) *ObjTeam {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertFalse(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "edit_provisioners",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjTeam) CanDelete_provisionersBy(subs ...ObjectWithRelationships) *ObjTeam {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertTrue(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "delete_provisioners",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjTeam) CannotDelete_provisionersBy(subs ...ObjectWithRelationships) *ObjTeam {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertFalse(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "delete_provisioners",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjTeam) CanCreate_provisionersBy(subs ...ObjectWithRelationships) *ObjTeam {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertTrue(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "create_provisioners",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjTeam) CannotCreate_provisionersBy(subs ...ObjectWithRelationships) *ObjTeam {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertFalse(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "create_provisioners",
 			Subject: &v1.SubjectReference{
 				Object:           sub.Object(),
 				OptionalRelation: "",
@@ -2107,6 +2481,15 @@ func (obj *ObjTemplate) ValidateEdit_pemissions() *ObjTemplate {
 	return obj
 }
 
+func (obj *ObjTemplate) ValidateUse() *ObjTemplate {
+	obj.AddValidation(v1.Relationship{
+		Resource:       obj.Obj,
+		Relation:       "use",
+		OptionalCaveat: nil,
+	})
+	return obj
+}
+
 func (obj *ObjTemplate) CanViewBy(subs ...ObjectWithRelationships) *ObjTemplate {
 	for i := range subs {
 		sub := subs[i]
@@ -2267,6 +2650,38 @@ func (obj *ObjTemplate) CannotEdit_pemissionsBy(subs ...ObjectWithRelationships)
 	return obj
 }
 
+func (obj *ObjTemplate) CanUseBy(subs ...ObjectWithRelationships) *ObjTemplate {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertTrue(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "use",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjTemplate) CannotUseBy(subs ...ObjectWithRelationships) *ObjTemplate {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertFalse(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "use",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
 type ObjTemplate_version struct {
 	Obj *v1.ObjectReference
 	*Relationships
@@ -2334,6 +2749,309 @@ func (obj *ObjTemplate_version) CanViewBy(subs ...ObjectWithRelationships) *ObjT
 }
 
 func (obj *ObjTemplate_version) CannotViewBy(subs ...ObjectWithRelationships) *ObjTemplate_version {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertFalse(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "view",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+type ObjFile struct {
+	Obj *v1.ObjectReference
+	*Relationships
+}
+
+func File(id string) *ObjFile {
+	o := &ObjFile{
+		Obj: &v1.ObjectReference{
+			ObjectType: "file",
+			ObjectId:   id,
+		},
+		Relationships: NewRelationships(),
+	}
+	allObjects = append(allObjects, o)
+	return o
+}
+
+func (obj *ObjFile) Type() string {
+	return "file"
+}
+
+func (obj *ObjFile) Object() *v1.ObjectReference {
+	return obj.Obj
+}
+
+func (obj *ObjFile) Template_version(subs ...*ObjTemplate_version) *ObjFile {
+	for i := range subs {
+		sub := subs[i]
+		obj.AddRelation(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "template_version",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjFile) ValidateView() *ObjFile {
+	obj.AddValidation(v1.Relationship{
+		Resource:       obj.Obj,
+		Relation:       "view",
+		OptionalCaveat: nil,
+	})
+	return obj
+}
+
+func (obj *ObjFile) CanViewBy(subs ...ObjectWithRelationships) *ObjFile {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertTrue(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "view",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjFile) CannotViewBy(subs ...ObjectWithRelationships) *ObjFile {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertFalse(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "view",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+type ObjProvisioner struct {
+	Obj *v1.ObjectReference
+	*Relationships
+}
+
+func Provisioner(id string) *ObjProvisioner {
+	o := &ObjProvisioner{
+		Obj: &v1.ObjectReference{
+			ObjectType: "provisioner",
+			ObjectId:   id,
+		},
+		Relationships: NewRelationships(),
+	}
+	allObjects = append(allObjects, o)
+	return o
+}
+
+func (obj *ObjProvisioner) Type() string {
+	return "provisioner"
+}
+
+func (obj *ObjProvisioner) Object() *v1.ObjectReference {
+	return obj.Obj
+}
+
+func (obj *ObjProvisioner) Owner(subs ...*ObjTeam) *ObjProvisioner {
+	for i := range subs {
+		sub := subs[i]
+		obj.AddRelation(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "owner",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjProvisioner) ValidateView() *ObjProvisioner {
+	obj.AddValidation(v1.Relationship{
+		Resource:       obj.Obj,
+		Relation:       "view",
+		OptionalCaveat: nil,
+	})
+	return obj
+}
+
+func (obj *ObjProvisioner) ValidateUse() *ObjProvisioner {
+	obj.AddValidation(v1.Relationship{
+		Resource:       obj.Obj,
+		Relation:       "use",
+		OptionalCaveat: nil,
+	})
+	return obj
+}
+
+func (obj *ObjProvisioner) CanViewBy(subs ...ObjectWithRelationships) *ObjProvisioner {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertTrue(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "view",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjProvisioner) CannotViewBy(subs ...ObjectWithRelationships) *ObjProvisioner {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertFalse(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "view",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjProvisioner) CanUseBy(subs ...ObjectWithRelationships) *ObjProvisioner {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertTrue(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "use",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjProvisioner) CannotUseBy(subs ...ObjectWithRelationships) *ObjProvisioner {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertFalse(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "use",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+type ObjJob struct {
+	Obj *v1.ObjectReference
+	*Relationships
+}
+
+func Job(id string) *ObjJob {
+	o := &ObjJob{
+		Obj: &v1.ObjectReference{
+			ObjectType: "job",
+			ObjectId:   id,
+		},
+		Relationships: NewRelationships(),
+	}
+	allObjects = append(allObjects, o)
+	return o
+}
+
+func (obj *ObjJob) Type() string {
+	return "job"
+}
+
+func (obj *ObjJob) Object() *v1.ObjectReference {
+	return obj.Obj
+}
+
+func (obj *ObjJob) Template_version(subs ...*ObjTemplate_version) *ObjJob {
+	for i := range subs {
+		sub := subs[i]
+		obj.AddRelation(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "template_version",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjJob) Workspace_build(subs ...*ObjWorkspace_build) *ObjJob {
+	for i := range subs {
+		sub := subs[i]
+		obj.AddRelation(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "workspace_build",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjJob) ValidateView() *ObjJob {
+	obj.AddValidation(v1.Relationship{
+		Resource:       obj.Obj,
+		Relation:       "view",
+		OptionalCaveat: nil,
+	})
+	return obj
+}
+
+func (obj *ObjJob) CanViewBy(subs ...ObjectWithRelationships) *ObjJob {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertTrue(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "view",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjJob) CannotViewBy(subs ...ObjectWithRelationships) *ObjJob {
 	for i := range subs {
 		sub := subs[i]
 		obj.AssertFalse(v1.Relationship{
