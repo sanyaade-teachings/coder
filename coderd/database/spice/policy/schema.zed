@@ -22,7 +22,9 @@ definition team {
 	// are passed through the team level.
 	relation platform: platform
 
-	// parent allows nesting teams
+	// parent allows nesting teams. Nested teams inherit the permissions from
+    // their parents. So if a user has permissions in a parent team, they have the same
+    // permissions in the child.
 	relation parent: team
 
 	// Teams have their own roles for user's to interact with team resources.
