@@ -154,10 +154,10 @@ definition workspace {
 	// The permissions come from the owning team roles, or individually granted
 	// permissions. The individual grants must still be apart of the team.
 	permission view =
-		// Some perms require view as well
-		edit + delete + select_template_version + ssh +
-		// Give view permissons to any role that requires reading the workspace to conduct their actions.
-		owner->view_workspaces + viewer
+	// Some perms require view as well
+	edit + delete + select_template_version + ssh +
+	// Give view permissons to any role that requires reading the workspace to conduct their actions.
+	owner->view_workspaces + viewer
 	permission edit = owner->edit_workspaces + editor
 	permission delete = owner->delete_workspaces + deletor
 	// TODO: Maybe a caveat to check if the selected version is the active template version, and if that is allowed.
@@ -216,7 +216,7 @@ definition template {
 	permission edit_pemissions = owner->manage_template_permissions
 
 	// Use is permitted by the owning team.
-	permission use = owner
+	permission use = owner + owner->parent
 }
 
 definition template_version {
@@ -231,6 +231,8 @@ definition file {
 	permission view = template_version -> view
 }
 
+// TODO: How do we handle provisioners? Should we keep using tags?
+// Add actual relations?
 definition provisioner {
 	// owning team for pulling permissions through.
 	relation owner: team
