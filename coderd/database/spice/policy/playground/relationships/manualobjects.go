@@ -147,9 +147,10 @@ func AllRelationsToStrings() string {
 	return strings.Join(allStrings, "\n")
 }
 
-func WorkspaceWithDeps(id string, team *ObjTeam, template *ObjTemplate) *ObjWorkspace {
+func WorkspaceWithDeps(id string, team *ObjTeam, template *ObjTemplate,) *ObjWorkspace {
 	// Building a workspace means the team needs access to the template + provisioner
-	template.CanUseBy(team) // This should be a perm check
+	template.CanUseBy(team) // Team perm check.
+
 
 	workspace := Workspace(id).Owner(team)
 	build := Workspace_build(fmt.Sprintf("%s/build", id)).
@@ -161,7 +162,7 @@ func WorkspaceWithDeps(id string, team *ObjTeam, template *ObjTemplate) *ObjWork
 	resources := Workspace_resources(fmt.Sprintf("%s/resources", id)).
 		Workspace(workspace)
 
-	// Add the template + provisioner relations
+	// Add the template + provisioner relationship
 	template.Workspace(workspace)
 
 	var _, _, _, _ = build, agent, app, resources

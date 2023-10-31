@@ -76,11 +76,13 @@ func GenerateRelationships() {
 		Workspace_creatorUser(elliot)
 
 	// Make some resources!
-	devTemplate := Template("dev-template").Owner(teamDevelopers)
+	devTemplate := Template("dev-template").Owner(teamEngineering)
 	devVersion := devTemplate.Version("active")
 	devTemplate.CannotUseBy(teamMarketing)
 	var _ = devVersion
 
+	// Steven will create a workspace.
+	teamDevelopers.CanCreate_workspaceBy(steven) // Perm check
 	stevenWorkspace := WorkspaceWithDeps("steven-workspace", teamDevelopers, devTemplate).
 		ViewerUser(steven).
 		EditorUser(steven).
