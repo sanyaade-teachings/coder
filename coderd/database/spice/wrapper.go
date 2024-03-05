@@ -38,8 +38,8 @@ func (d DatastoreWrapper) RevisionFromString(serialized string) (datastore.Revis
 	return d.Datastore.RevisionFromString(serialized)
 }
 
-func (d DatastoreWrapper) Watch(ctx context.Context, afterRevision datastore.Revision) (<-chan *datastore.RevisionChanges, <-chan error) {
-	return d.Datastore.Watch(ctx, afterRevision)
+func (d DatastoreWrapper) Watch(ctx context.Context, afterRevision datastore.Revision, options datastore.WatchOptions) (<-chan *datastore.RevisionChanges, <-chan error) {
+	return d.Datastore.Watch(ctx, afterRevision, options)
 }
 
 func (d DatastoreWrapper) ReadyState(ctx context.Context) (datastore.ReadyState, error) {
