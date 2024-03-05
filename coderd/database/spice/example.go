@@ -4,6 +4,7 @@ import (
 	"context"
 	_ "embed"
 	"log"
+	"strings"
 
 	"github.com/authzed/spicedb/pkg/tuple"
 
@@ -23,11 +24,13 @@ import (
 	"github.com/authzed/spicedb/pkg/cmd/datastore"
 	"github.com/authzed/spicedb/pkg/cmd/server"
 	"github.com/authzed/spicedb/pkg/cmd/util"
+
+	"github.com/coder/coder/v2/coderd/database/spice/policy/playground/relationships"
 )
 
 var _ = v1.NewSchemaServiceClient
 
-//go:embed schema.zed
+//go:embed policy/schema.zed
 var schema string
 
 func RunExample(ctx context.Context) error {
@@ -61,15 +64,9 @@ func RunExample(ctx context.Context) error {
 		return err
 	}
 
-	permsToCheck := []string{
-		"workspace:dogfood#view@user:root",
-		"workspace:dogfood#view@user:alice",
-		"workspace:dogfood#view@user:charlie",
-		"workspace:dogfood#view@user:gopher",
-		"workspace_build:dogfood-build#view@user:gopher",
-		// Look for cache hits?
-		"workspace_build:dogfood-build#view@user:gopher",
-	}
+	relationships.AllAssertTrue()
+	// Example: "workspace:dogfood#view@user:root"
+	permsToCheck := relationships.AllAssertTrue()
 
 	for _, perm := range permsToCheck {
 		tup := tuple.Parse(perm)
@@ -79,13 +76,13 @@ func RunExample(ctx context.Context) error {
 		var trailerMD metadata.MD
 		ctx = requestmeta.AddRequestHeaders(ctx, requestmeta.RequestDebugInformation)
 		checkResp, err := permSrv.CheckPermission(ctx, &v1.CheckPermissionRequest{
-			Permission:  "view",
+			Permission:  r.Relation,
 			Consistency: &v1.Consistency{Requirement: &v1.Consistency_AtLeastAsFresh{AtLeastAsFresh: token}},
 			Resource:    r.Resource,
 			Subject:     r.Subject,
 		}, grpc.Trailer(&trailerMD))
 		if err != nil {
-			log.Fatal("unable to issue PermissionCheck: %w", err)
+			log.Fatalf("unable to issue PermissionCheck %q: %s", perm, err.Error())
 		} else {
 			log.Printf("check result (%s): %s", perm, checkResp.Permissionship.String())
 			// All this debug stuff just shows the trace of the check
@@ -116,27 +113,15 @@ func RunExample(ctx context.Context) error {
 
 func populateRelationships(ctx context.Context, permSrv v1.PermissionsServiceClient) (*v1.ZedToken, error) {
 	// Write in a workspace
-	relationships := []string{
-		"platform:default#administrator@user:root",
-
-		//"Dogfood" workspace owned by "Alice" with the group "developers"
-		"workspace:dogfood#owner@user:alice",
-		"workspace_build:dogfood-build#workspace@workspace:dogfood",
-		"workspace:dogfood#platform@platform:default",
-		"workspace:dogfood#group@group:developers",
-
-		//Group middle-class is in group developers
-		"group:developers#direct_member@user:bob",
-		"group:back-end#direct_member@user:charlie",
-		"group:golang#direct_member@user:gopher",
-		"group:developers#child_group@group:back-end",
-		"group:developers#child_group@group:front-end",
-		"group:back-end#child_group@group:golang",
-		"group:back-end#child_group@group:sql",
-	}
+	relationships.GenerateRelationships()
+	// Example: group:hr#member@user:camilla
+	all := strings.Split(relationships.AllRelationsToStrings(), "\n")
 
 	var token *v1.ZedToken
-	for _, rel := range relationships {
+	for _, rel := range all {
+		if strings.HasPrefix(strings.TrimSpace(rel), "//") || rel == "" {
+			continue
+		}
 		tup := tuple.Parse(rel)
 		v1Rel := tuple.ToRelationship(tup)
 
@@ -161,12 +146,14 @@ func newServer(ctx context.Context) (server.RunnableServer, error) {
 		datastore.WithEngine(datastore.PostgresEngine),
 		datastore.WithRequestHedgingEnabled(false),
 		// must run migrations first
-		// spicedb migrate --datastore-engine=postgres --datastore-conn-uri "postgres://postgres:postgres@localhost:5432/spicedb?sslmode=disable" head
+		// To get cli: go install github.com/authzed/spicedb/cmd/spicedb@latest
+		// spicedb migrate --skip-release-check --datastore-engine=postgres --datastore-conn-uri "postgres://postgres:postgres@localhost:5432/spicedb?sslmode=disable" head
 		datastore.WithURI(`postgres://postgres:postgres@localhost:5432/spicedb?sslmode=disable`),
 	)
 	if err != nil {
 		log.Fatalf("unable to start postgres datastore: %s", err)
 	}
+
 	ds = &DatastoreWrapper{
 		Datastore: ds,
 	}
