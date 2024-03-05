@@ -3,15 +3,15 @@ package relationships
 
 import v1 "github.com/authzed/authzed-go/proto/authzed/api/v1"
 
-type ObjPlatform struct {
+type ObjUser struct {
 	Obj *v1.ObjectReference
 	*Relationships
 }
 
-func Platform(id string) *ObjPlatform {
-	o := &ObjPlatform{
+func User(id string) *ObjUser {
+	o := &ObjUser{
 		Obj: &v1.ObjectReference{
-			ObjectType: "platform",
+			ObjectType: "user",
 			ObjectId:   id,
 		},
 		Relationships: NewRelationships(),
@@ -20,1449 +20,12 @@ func Platform(id string) *ObjPlatform {
 	return o
 }
 
-func (obj *ObjPlatform) Type() string {
-	return "platform"
+func (obj *ObjUser) Type() string {
+	return "user"
 }
 
-func (obj *ObjPlatform) Object() *v1.ObjectReference {
+func (obj *ObjUser) Object() *v1.ObjectReference {
 	return obj.Obj
-}
-
-func (obj *ObjPlatform) Administrator(subs ...*ObjUser) *ObjPlatform {
-	for i := range subs {
-		sub := subs[i]
-		obj.AddRelation(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "administrator",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Obj,
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjPlatform) ValidateSuper_admin() *ObjPlatform {
-	obj.AddValidation(v1.Relationship{
-		Resource:       obj.Obj,
-		Relation:       "super_admin",
-		OptionalCaveat: nil,
-	})
-	return obj
-}
-
-func (obj *ObjPlatform) CanSuper_adminBy(subs ...ObjectWithRelationships) *ObjPlatform {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertTrue(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "super_admin",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjPlatform) CannotSuper_adminBy(subs ...ObjectWithRelationships) *ObjPlatform {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertFalse(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "super_admin",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-type ObjTeam struct {
-	Obj *v1.ObjectReference
-	*Relationships
-}
-
-func Team(id string) *ObjTeam {
-	o := &ObjTeam{
-		Obj: &v1.ObjectReference{
-			ObjectType: "team",
-			ObjectId:   id,
-		},
-		Relationships: NewRelationships(),
-	}
-	allObjects = append(allObjects, o)
-	return o
-}
-
-func (obj *ObjTeam) Type() string {
-	return "team"
-}
-
-func (obj *ObjTeam) Object() *v1.ObjectReference {
-	return obj.Obj
-}
-
-func (obj *ObjTeam) Platform(subs ...*ObjPlatform) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AddRelation(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "platform",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Obj,
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) Parent(subs ...*ObjTeam) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AddRelation(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "parent",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Obj,
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) MemberGroup(subs ...*ObjGroup) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AddRelation(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "member",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Obj,
-				OptionalRelation: "membership",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) MemberUser(subs ...*ObjUser) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AddRelation(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "member",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Obj,
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) Workspace_viewerGroup(subs ...*ObjGroup) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AddRelation(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "workspace_viewer",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Obj,
-				OptionalRelation: "membership",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) Workspace_viewerUser(subs ...*ObjUser) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AddRelation(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "workspace_viewer",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Obj,
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) Workspace_creatorGroup(subs ...*ObjGroup) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AddRelation(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "workspace_creator",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Obj,
-				OptionalRelation: "membership",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) Workspace_creatorUser(subs ...*ObjUser) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AddRelation(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "workspace_creator",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Obj,
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) Workspace_deletorGroup(subs ...*ObjGroup) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AddRelation(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "workspace_deletor",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Obj,
-				OptionalRelation: "membership",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) Workspace_deletorUser(subs ...*ObjUser) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AddRelation(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "workspace_deletor",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Obj,
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) Workspace_version_selectorGroup(subs ...*ObjGroup) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AddRelation(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "workspace_version_selector",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Obj,
-				OptionalRelation: "membership",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) Workspace_version_selectorUser(subs ...*ObjUser) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AddRelation(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "workspace_version_selector",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Obj,
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) Dangerous_workspace_connectorGroup(subs ...*ObjGroup) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AddRelation(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "dangerous_workspace_connector",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Obj,
-				OptionalRelation: "membership",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) Dangerous_workspace_connectorUser(subs ...*ObjUser) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AddRelation(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "dangerous_workspace_connector",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Obj,
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) Workspace_editorGroup(subs ...*ObjGroup) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AddRelation(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "workspace_editor",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Obj,
-				OptionalRelation: "membership",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) Workspace_editorUser(subs ...*ObjUser) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AddRelation(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "workspace_editor",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Obj,
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) Template_viewerGroup(subs ...*ObjGroup) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AddRelation(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "template_viewer",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Obj,
-				OptionalRelation: "membership",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) Template_viewerUser(subs ...*ObjUser) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AddRelation(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "template_viewer",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Obj,
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) Template_creatorGroup(subs ...*ObjGroup) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AddRelation(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "template_creator",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Obj,
-				OptionalRelation: "membership",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) Template_creatorUser(subs ...*ObjUser) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AddRelation(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "template_creator",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Obj,
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) Template_deletorGroup(subs ...*ObjGroup) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AddRelation(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "template_deletor",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Obj,
-				OptionalRelation: "membership",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) Template_deletorUser(subs ...*ObjUser) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AddRelation(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "template_deletor",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Obj,
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) Template_editorGroup(subs ...*ObjGroup) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AddRelation(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "template_editor",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Obj,
-				OptionalRelation: "membership",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) Template_editorUser(subs ...*ObjUser) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AddRelation(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "template_editor",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Obj,
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) Template_permission_managerGroup(subs ...*ObjGroup) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AddRelation(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "template_permission_manager",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Obj,
-				OptionalRelation: "membership",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) Template_permission_managerUser(subs ...*ObjUser) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AddRelation(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "template_permission_manager",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Obj,
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) Template_insights_viewerGroup(subs ...*ObjGroup) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AddRelation(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "template_insights_viewer",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Obj,
-				OptionalRelation: "membership",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) Template_insights_viewerUser(subs ...*ObjUser) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AddRelation(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "template_insights_viewer",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Obj,
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) Provisioner_viewerGroup(subs ...*ObjGroup) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AddRelation(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "provisioner_viewer",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Obj,
-				OptionalRelation: "membership",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) Provisioner_viewerUser(subs ...*ObjUser) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AddRelation(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "provisioner_viewer",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Obj,
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) Provisioner_creatorGroup(subs ...*ObjGroup) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AddRelation(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "provisioner_creator",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Obj,
-				OptionalRelation: "membership",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) Provisioner_creatorUser(subs ...*ObjUser) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AddRelation(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "provisioner_creator",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Obj,
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) Provisioner_deletorGroup(subs ...*ObjGroup) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AddRelation(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "provisioner_deletor",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Obj,
-				OptionalRelation: "membership",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) Provisioner_deletorUser(subs ...*ObjUser) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AddRelation(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "provisioner_deletor",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Obj,
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) Provisioner_editorGroup(subs ...*ObjGroup) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AddRelation(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "provisioner_editor",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Obj,
-				OptionalRelation: "membership",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) Provisioner_editorUser(subs ...*ObjUser) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AddRelation(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "provisioner_editor",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Obj,
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) ValidateDirect_membership() *ObjTeam {
-	obj.AddValidation(v1.Relationship{
-		Resource:       obj.Obj,
-		Relation:       "direct_membership",
-		OptionalCaveat: nil,
-	})
-	return obj
-}
-
-func (obj *ObjTeam) ValidateView_workspaces() *ObjTeam {
-	obj.AddValidation(v1.Relationship{
-		Resource:       obj.Obj,
-		Relation:       "view_workspaces",
-		OptionalCaveat: nil,
-	})
-	return obj
-}
-
-func (obj *ObjTeam) ValidateEdit_workspaces() *ObjTeam {
-	obj.AddValidation(v1.Relationship{
-		Resource:       obj.Obj,
-		Relation:       "edit_workspaces",
-		OptionalCaveat: nil,
-	})
-	return obj
-}
-
-func (obj *ObjTeam) ValidateSelect_workspace_version() *ObjTeam {
-	obj.AddValidation(v1.Relationship{
-		Resource:       obj.Obj,
-		Relation:       "select_workspace_version",
-		OptionalCaveat: nil,
-	})
-	return obj
-}
-
-func (obj *ObjTeam) ValidateDelete_workspaces() *ObjTeam {
-	obj.AddValidation(v1.Relationship{
-		Resource:       obj.Obj,
-		Relation:       "delete_workspaces",
-		OptionalCaveat: nil,
-	})
-	return obj
-}
-
-func (obj *ObjTeam) ValidateConnect_workspaces() *ObjTeam {
-	obj.AddValidation(v1.Relationship{
-		Resource:       obj.Obj,
-		Relation:       "connect_workspaces",
-		OptionalCaveat: nil,
-	})
-	return obj
-}
-
-func (obj *ObjTeam) ValidateCreate_workspace() *ObjTeam {
-	obj.AddValidation(v1.Relationship{
-		Resource:       obj.Obj,
-		Relation:       "create_workspace",
-		OptionalCaveat: nil,
-	})
-	return obj
-}
-
-func (obj *ObjTeam) ValidateView_templates() *ObjTeam {
-	obj.AddValidation(v1.Relationship{
-		Resource:       obj.Obj,
-		Relation:       "view_templates",
-		OptionalCaveat: nil,
-	})
-	return obj
-}
-
-func (obj *ObjTeam) ValidateView_template_insights() *ObjTeam {
-	obj.AddValidation(v1.Relationship{
-		Resource:       obj.Obj,
-		Relation:       "view_template_insights",
-		OptionalCaveat: nil,
-	})
-	return obj
-}
-
-func (obj *ObjTeam) ValidateEdit_templates() *ObjTeam {
-	obj.AddValidation(v1.Relationship{
-		Resource:       obj.Obj,
-		Relation:       "edit_templates",
-		OptionalCaveat: nil,
-	})
-	return obj
-}
-
-func (obj *ObjTeam) ValidateDelete_templates() *ObjTeam {
-	obj.AddValidation(v1.Relationship{
-		Resource:       obj.Obj,
-		Relation:       "delete_templates",
-		OptionalCaveat: nil,
-	})
-	return obj
-}
-
-func (obj *ObjTeam) ValidateManage_template_permissions() *ObjTeam {
-	obj.AddValidation(v1.Relationship{
-		Resource:       obj.Obj,
-		Relation:       "manage_template_permissions",
-		OptionalCaveat: nil,
-	})
-	return obj
-}
-
-func (obj *ObjTeam) ValidateCreate_template() *ObjTeam {
-	obj.AddValidation(v1.Relationship{
-		Resource:       obj.Obj,
-		Relation:       "create_template",
-		OptionalCaveat: nil,
-	})
-	return obj
-}
-
-func (obj *ObjTeam) ValidateCreate_template_version() *ObjTeam {
-	obj.AddValidation(v1.Relationship{
-		Resource:       obj.Obj,
-		Relation:       "create_template_version",
-		OptionalCaveat: nil,
-	})
-	return obj
-}
-
-func (obj *ObjTeam) ValidateCreate_file() *ObjTeam {
-	obj.AddValidation(v1.Relationship{
-		Resource:       obj.Obj,
-		Relation:       "create_file",
-		OptionalCaveat: nil,
-	})
-	return obj
-}
-
-func (obj *ObjTeam) ValidateView_provisioners() *ObjTeam {
-	obj.AddValidation(v1.Relationship{
-		Resource:       obj.Obj,
-		Relation:       "view_provisioners",
-		OptionalCaveat: nil,
-	})
-	return obj
-}
-
-func (obj *ObjTeam) ValidateEdit_provisioners() *ObjTeam {
-	obj.AddValidation(v1.Relationship{
-		Resource:       obj.Obj,
-		Relation:       "edit_provisioners",
-		OptionalCaveat: nil,
-	})
-	return obj
-}
-
-func (obj *ObjTeam) ValidateDelete_provisioners() *ObjTeam {
-	obj.AddValidation(v1.Relationship{
-		Resource:       obj.Obj,
-		Relation:       "delete_provisioners",
-		OptionalCaveat: nil,
-	})
-	return obj
-}
-
-func (obj *ObjTeam) ValidateCreate_provisioners() *ObjTeam {
-	obj.AddValidation(v1.Relationship{
-		Resource:       obj.Obj,
-		Relation:       "create_provisioners",
-		OptionalCaveat: nil,
-	})
-	return obj
-}
-
-func (obj *ObjTeam) CanDirect_membershipBy(subs ...ObjectWithRelationships) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertTrue(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "direct_membership",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) CannotDirect_membershipBy(subs ...ObjectWithRelationships) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertFalse(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "direct_membership",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) CanView_workspacesBy(subs ...ObjectWithRelationships) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertTrue(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "view_workspaces",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) CannotView_workspacesBy(subs ...ObjectWithRelationships) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertFalse(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "view_workspaces",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) CanEdit_workspacesBy(subs ...ObjectWithRelationships) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertTrue(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "edit_workspaces",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) CannotEdit_workspacesBy(subs ...ObjectWithRelationships) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertFalse(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "edit_workspaces",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) CanSelect_workspace_versionBy(subs ...ObjectWithRelationships) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertTrue(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "select_workspace_version",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) CannotSelect_workspace_versionBy(subs ...ObjectWithRelationships) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertFalse(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "select_workspace_version",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) CanDelete_workspacesBy(subs ...ObjectWithRelationships) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertTrue(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "delete_workspaces",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) CannotDelete_workspacesBy(subs ...ObjectWithRelationships) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertFalse(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "delete_workspaces",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) CanConnect_workspacesBy(subs ...ObjectWithRelationships) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertTrue(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "connect_workspaces",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) CannotConnect_workspacesBy(subs ...ObjectWithRelationships) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertFalse(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "connect_workspaces",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) CanCreate_workspaceBy(subs ...ObjectWithRelationships) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertTrue(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "create_workspace",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) CannotCreate_workspaceBy(subs ...ObjectWithRelationships) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertFalse(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "create_workspace",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) CanView_templatesBy(subs ...ObjectWithRelationships) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertTrue(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "view_templates",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) CannotView_templatesBy(subs ...ObjectWithRelationships) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertFalse(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "view_templates",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) CanView_template_insightsBy(subs ...ObjectWithRelationships) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertTrue(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "view_template_insights",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) CannotView_template_insightsBy(subs ...ObjectWithRelationships) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertFalse(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "view_template_insights",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) CanEdit_templatesBy(subs ...ObjectWithRelationships) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertTrue(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "edit_templates",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) CannotEdit_templatesBy(subs ...ObjectWithRelationships) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertFalse(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "edit_templates",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) CanDelete_templatesBy(subs ...ObjectWithRelationships) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertTrue(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "delete_templates",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) CannotDelete_templatesBy(subs ...ObjectWithRelationships) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertFalse(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "delete_templates",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) CanManage_template_permissionsBy(subs ...ObjectWithRelationships) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertTrue(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "manage_template_permissions",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) CannotManage_template_permissionsBy(subs ...ObjectWithRelationships) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertFalse(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "manage_template_permissions",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) CanCreate_templateBy(subs ...ObjectWithRelationships) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertTrue(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "create_template",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) CannotCreate_templateBy(subs ...ObjectWithRelationships) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertFalse(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "create_template",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) CanCreate_template_versionBy(subs ...ObjectWithRelationships) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertTrue(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "create_template_version",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) CannotCreate_template_versionBy(subs ...ObjectWithRelationships) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertFalse(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "create_template_version",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) CanCreate_fileBy(subs ...ObjectWithRelationships) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertTrue(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "create_file",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) CannotCreate_fileBy(subs ...ObjectWithRelationships) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertFalse(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "create_file",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) CanView_provisionersBy(subs ...ObjectWithRelationships) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertTrue(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "view_provisioners",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) CannotView_provisionersBy(subs ...ObjectWithRelationships) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertFalse(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "view_provisioners",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) CanEdit_provisionersBy(subs ...ObjectWithRelationships) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertTrue(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "edit_provisioners",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) CannotEdit_provisionersBy(subs ...ObjectWithRelationships) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertFalse(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "edit_provisioners",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) CanDelete_provisionersBy(subs ...ObjectWithRelationships) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertTrue(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "delete_provisioners",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) CannotDelete_provisionersBy(subs ...ObjectWithRelationships) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertFalse(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "delete_provisioners",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) CanCreate_provisionersBy(subs ...ObjectWithRelationships) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertTrue(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "create_provisioners",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjTeam) CannotCreate_provisionersBy(subs ...ObjectWithRelationships) *ObjTeam {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertFalse(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "create_provisioners",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
 }
 
 type ObjGroup struct {
@@ -1579,15 +142,15 @@ func (obj *ObjGroup) CannotMembershipBy(subs ...ObjectWithRelationships) *ObjGro
 	return obj
 }
 
-type ObjUser struct {
+type ObjPlatform struct {
 	Obj *v1.ObjectReference
 	*Relationships
 }
 
-func User(id string) *ObjUser {
-	o := &ObjUser{
+func Platform(id string) *ObjPlatform {
+	o := &ObjPlatform{
 		Obj: &v1.ObjectReference{
-			ObjectType: "user",
+			ObjectType: "platform",
 			ObjectId:   id,
 		},
 		Relationships: NewRelationships(),
@@ -1596,12 +159,995 @@ func User(id string) *ObjUser {
 	return o
 }
 
-func (obj *ObjUser) Type() string {
-	return "user"
+func (obj *ObjPlatform) Type() string {
+	return "platform"
 }
 
-func (obj *ObjUser) Object() *v1.ObjectReference {
+func (obj *ObjPlatform) Object() *v1.ObjectReference {
 	return obj.Obj
+}
+
+func (obj *ObjPlatform) Administrator(subs ...*ObjUser) *ObjPlatform {
+	for i := range subs {
+		sub := subs[i]
+		obj.AddRelation(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "administrator",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjPlatform) ValidateSuper_admin() *ObjPlatform {
+	obj.AddValidation(v1.Relationship{
+		Resource:       obj.Obj,
+		Relation:       "super_admin",
+		OptionalCaveat: nil,
+	})
+	return obj
+}
+
+func (obj *ObjPlatform) CanSuper_adminBy(subs ...ObjectWithRelationships) *ObjPlatform {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertTrue(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "super_admin",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjPlatform) CannotSuper_adminBy(subs ...ObjectWithRelationships) *ObjPlatform {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertFalse(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "super_admin",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+type ObjOrganization struct {
+	Obj *v1.ObjectReference
+	*Relationships
+}
+
+func Organization(id string) *ObjOrganization {
+	o := &ObjOrganization{
+		Obj: &v1.ObjectReference{
+			ObjectType: "organization",
+			ObjectId:   id,
+		},
+		Relationships: NewRelationships(),
+	}
+	allObjects = append(allObjects, o)
+	return o
+}
+
+func (obj *ObjOrganization) Type() string {
+	return "organization"
+}
+
+func (obj *ObjOrganization) Object() *v1.ObjectReference {
+	return obj.Obj
+}
+
+func (obj *ObjOrganization) Platform(subs ...*ObjPlatform) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AddRelation(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "platform",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) MemberGroup(subs ...*ObjGroup) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AddRelation(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "member",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "membership",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) MemberUser(subs ...*ObjUser) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AddRelation(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "member",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) Workspace_viewerGroup(subs ...*ObjGroup) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AddRelation(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "workspace_viewer",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "membership",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) Workspace_viewerUser(subs ...*ObjUser) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AddRelation(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "workspace_viewer",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) Workspace_creatorGroup(subs ...*ObjGroup) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AddRelation(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "workspace_creator",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "membership",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) Workspace_creatorUser(subs ...*ObjUser) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AddRelation(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "workspace_creator",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) Workspace_deletorGroup(subs ...*ObjGroup) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AddRelation(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "workspace_deletor",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "membership",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) Workspace_deletorUser(subs ...*ObjUser) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AddRelation(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "workspace_deletor",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) Workspace_editorGroup(subs ...*ObjGroup) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AddRelation(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "workspace_editor",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "membership",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) Workspace_editorUser(subs ...*ObjUser) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AddRelation(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "workspace_editor",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) Template_viewerGroup(subs ...*ObjGroup) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AddRelation(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "template_viewer",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "membership",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) Template_viewerUser(subs ...*ObjUser) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AddRelation(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "template_viewer",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) Template_creatorGroup(subs ...*ObjGroup) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AddRelation(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "template_creator",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "membership",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) Template_creatorUser(subs ...*ObjUser) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AddRelation(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "template_creator",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) Template_deletorGroup(subs ...*ObjGroup) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AddRelation(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "template_deletor",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "membership",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) Template_deletorUser(subs ...*ObjUser) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AddRelation(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "template_deletor",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) Template_editorGroup(subs ...*ObjGroup) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AddRelation(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "template_editor",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "membership",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) Template_editorUser(subs ...*ObjUser) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AddRelation(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "template_editor",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) Template_permission_managerGroup(subs ...*ObjGroup) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AddRelation(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "template_permission_manager",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "membership",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) Template_permission_managerUser(subs ...*ObjUser) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AddRelation(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "template_permission_manager",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) Template_insights_viewerGroup(subs ...*ObjGroup) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AddRelation(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "template_insights_viewer",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "membership",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) Template_insights_viewerUser(subs ...*ObjUser) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AddRelation(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "template_insights_viewer",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) ValidateView_workspaces() *ObjOrganization {
+	obj.AddValidation(v1.Relationship{
+		Resource:       obj.Obj,
+		Relation:       "view_workspaces",
+		OptionalCaveat: nil,
+	})
+	return obj
+}
+
+func (obj *ObjOrganization) ValidateEdit_workspaces() *ObjOrganization {
+	obj.AddValidation(v1.Relationship{
+		Resource:       obj.Obj,
+		Relation:       "edit_workspaces",
+		OptionalCaveat: nil,
+	})
+	return obj
+}
+
+func (obj *ObjOrganization) ValidateSelect_workspace_version() *ObjOrganization {
+	obj.AddValidation(v1.Relationship{
+		Resource:       obj.Obj,
+		Relation:       "select_workspace_version",
+		OptionalCaveat: nil,
+	})
+	return obj
+}
+
+func (obj *ObjOrganization) ValidateDelete_workspaces() *ObjOrganization {
+	obj.AddValidation(v1.Relationship{
+		Resource:       obj.Obj,
+		Relation:       "delete_workspaces",
+		OptionalCaveat: nil,
+	})
+	return obj
+}
+
+func (obj *ObjOrganization) ValidateCreate_workspace() *ObjOrganization {
+	obj.AddValidation(v1.Relationship{
+		Resource:       obj.Obj,
+		Relation:       "create_workspace",
+		OptionalCaveat: nil,
+	})
+	return obj
+}
+
+func (obj *ObjOrganization) ValidateView_templates() *ObjOrganization {
+	obj.AddValidation(v1.Relationship{
+		Resource:       obj.Obj,
+		Relation:       "view_templates",
+		OptionalCaveat: nil,
+	})
+	return obj
+}
+
+func (obj *ObjOrganization) ValidateView_template_insights() *ObjOrganization {
+	obj.AddValidation(v1.Relationship{
+		Resource:       obj.Obj,
+		Relation:       "view_template_insights",
+		OptionalCaveat: nil,
+	})
+	return obj
+}
+
+func (obj *ObjOrganization) ValidateEdit_templates() *ObjOrganization {
+	obj.AddValidation(v1.Relationship{
+		Resource:       obj.Obj,
+		Relation:       "edit_templates",
+		OptionalCaveat: nil,
+	})
+	return obj
+}
+
+func (obj *ObjOrganization) ValidateDelete_templates() *ObjOrganization {
+	obj.AddValidation(v1.Relationship{
+		Resource:       obj.Obj,
+		Relation:       "delete_templates",
+		OptionalCaveat: nil,
+	})
+	return obj
+}
+
+func (obj *ObjOrganization) ValidateManage_template_permissions() *ObjOrganization {
+	obj.AddValidation(v1.Relationship{
+		Resource:       obj.Obj,
+		Relation:       "manage_template_permissions",
+		OptionalCaveat: nil,
+	})
+	return obj
+}
+
+func (obj *ObjOrganization) ValidateCreate_template() *ObjOrganization {
+	obj.AddValidation(v1.Relationship{
+		Resource:       obj.Obj,
+		Relation:       "create_template",
+		OptionalCaveat: nil,
+	})
+	return obj
+}
+
+func (obj *ObjOrganization) ValidateCreate_template_version() *ObjOrganization {
+	obj.AddValidation(v1.Relationship{
+		Resource:       obj.Obj,
+		Relation:       "create_template_version",
+		OptionalCaveat: nil,
+	})
+	return obj
+}
+
+func (obj *ObjOrganization) ValidateCreate_file() *ObjOrganization {
+	obj.AddValidation(v1.Relationship{
+		Resource:       obj.Obj,
+		Relation:       "create_file",
+		OptionalCaveat: nil,
+	})
+	return obj
+}
+
+func (obj *ObjOrganization) CanView_workspacesBy(subs ...ObjectWithRelationships) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertTrue(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "view_workspaces",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) CannotView_workspacesBy(subs ...ObjectWithRelationships) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertFalse(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "view_workspaces",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) CanEdit_workspacesBy(subs ...ObjectWithRelationships) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertTrue(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "edit_workspaces",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) CannotEdit_workspacesBy(subs ...ObjectWithRelationships) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertFalse(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "edit_workspaces",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) CanSelect_workspace_versionBy(subs ...ObjectWithRelationships) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertTrue(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "select_workspace_version",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) CannotSelect_workspace_versionBy(subs ...ObjectWithRelationships) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertFalse(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "select_workspace_version",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) CanDelete_workspacesBy(subs ...ObjectWithRelationships) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertTrue(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "delete_workspaces",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) CannotDelete_workspacesBy(subs ...ObjectWithRelationships) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertFalse(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "delete_workspaces",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) CanCreate_workspaceBy(subs ...ObjectWithRelationships) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertTrue(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "create_workspace",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) CannotCreate_workspaceBy(subs ...ObjectWithRelationships) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertFalse(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "create_workspace",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) CanView_templatesBy(subs ...ObjectWithRelationships) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertTrue(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "view_templates",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) CannotView_templatesBy(subs ...ObjectWithRelationships) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertFalse(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "view_templates",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) CanView_template_insightsBy(subs ...ObjectWithRelationships) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertTrue(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "view_template_insights",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) CannotView_template_insightsBy(subs ...ObjectWithRelationships) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertFalse(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "view_template_insights",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) CanEdit_templatesBy(subs ...ObjectWithRelationships) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertTrue(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "edit_templates",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) CannotEdit_templatesBy(subs ...ObjectWithRelationships) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertFalse(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "edit_templates",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) CanDelete_templatesBy(subs ...ObjectWithRelationships) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertTrue(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "delete_templates",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) CannotDelete_templatesBy(subs ...ObjectWithRelationships) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertFalse(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "delete_templates",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) CanManage_template_permissionsBy(subs ...ObjectWithRelationships) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertTrue(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "manage_template_permissions",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) CannotManage_template_permissionsBy(subs ...ObjectWithRelationships) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertFalse(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "manage_template_permissions",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) CanCreate_templateBy(subs ...ObjectWithRelationships) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertTrue(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "create_template",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) CannotCreate_templateBy(subs ...ObjectWithRelationships) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertFalse(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "create_template",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) CanCreate_template_versionBy(subs ...ObjectWithRelationships) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertTrue(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "create_template_version",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) CannotCreate_template_versionBy(subs ...ObjectWithRelationships) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertFalse(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "create_template_version",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) CanCreate_fileBy(subs ...ObjectWithRelationships) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertTrue(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "create_file",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjOrganization) CannotCreate_fileBy(subs ...ObjectWithRelationships) *ObjOrganization {
+	for i := range subs {
+		sub := subs[i]
+		obj.AssertFalse(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "create_file",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Object(),
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
 }
 
 type ObjWorkspace struct {
@@ -1629,12 +1175,12 @@ func (obj *ObjWorkspace) Object() *v1.ObjectReference {
 	return obj.Obj
 }
 
-func (obj *ObjWorkspace) Owner(subs ...*ObjTeam) *ObjWorkspace {
+func (obj *ObjWorkspace) Organization(subs ...*ObjOrganization) *ObjWorkspace {
 	for i := range subs {
 		sub := subs[i]
 		obj.AddRelation(v1.Relationship{
 			Resource: obj.Obj,
-			Relation: "owner",
+			Relation: "organization",
 			Subject: &v1.SubjectReference{
 				Object:           sub.Obj,
 				OptionalRelation: "",
@@ -2092,129 +1638,6 @@ func (obj *ObjWorkspace_build) CannotViewBy(subs ...ObjectWithRelationships) *Ob
 	return obj
 }
 
-type ObjWorspace_app struct {
-	Obj *v1.ObjectReference
-	*Relationships
-}
-
-func Worspace_app(id string) *ObjWorspace_app {
-	o := &ObjWorspace_app{
-		Obj: &v1.ObjectReference{
-			ObjectType: "worspace_app",
-			ObjectId:   id,
-		},
-		Relationships: NewRelationships(),
-	}
-	allObjects = append(allObjects, o)
-	return o
-}
-
-func (obj *ObjWorspace_app) Type() string {
-	return "worspace_app"
-}
-
-func (obj *ObjWorspace_app) Object() *v1.ObjectReference {
-	return obj.Obj
-}
-
-func (obj *ObjWorspace_app) Workspace(subs ...*ObjWorkspace) *ObjWorspace_app {
-	for i := range subs {
-		sub := subs[i]
-		obj.AddRelation(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "workspace",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Obj,
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjWorspace_app) ValidateView() *ObjWorspace_app {
-	obj.AddValidation(v1.Relationship{
-		Resource:       obj.Obj,
-		Relation:       "view",
-		OptionalCaveat: nil,
-	})
-	return obj
-}
-
-func (obj *ObjWorspace_app) ValidateConnect() *ObjWorspace_app {
-	obj.AddValidation(v1.Relationship{
-		Resource:       obj.Obj,
-		Relation:       "connect",
-		OptionalCaveat: nil,
-	})
-	return obj
-}
-
-func (obj *ObjWorspace_app) CanViewBy(subs ...ObjectWithRelationships) *ObjWorspace_app {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertTrue(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "view",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjWorspace_app) CannotViewBy(subs ...ObjectWithRelationships) *ObjWorspace_app {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertFalse(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "view",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjWorspace_app) CanConnectBy(subs ...ObjectWithRelationships) *ObjWorspace_app {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertTrue(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "connect",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjWorspace_app) CannotConnectBy(subs ...ObjectWithRelationships) *ObjWorspace_app {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertFalse(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "connect",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
 type ObjWorkspace_agent struct {
 	Obj *v1.ObjectReference
 	*Relationships
@@ -2404,12 +1827,12 @@ func (obj *ObjTemplate) Object() *v1.ObjectReference {
 	return obj.Obj
 }
 
-func (obj *ObjTemplate) Owner(subs ...*ObjTeam) *ObjTemplate {
+func (obj *ObjTemplate) Organization(subs ...*ObjOrganization) *ObjTemplate {
 	for i := range subs {
 		sub := subs[i]
 		obj.AddRelation(v1.Relationship{
 			Resource: obj.Obj,
-			Relation: "owner",
+			Relation: "organization",
 			Subject: &v1.SubjectReference{
 				Object:           sub.Obj,
 				OptionalRelation: "",
@@ -2836,129 +2259,6 @@ func (obj *ObjFile) CannotViewBy(subs ...ObjectWithRelationships) *ObjFile {
 		obj.AssertFalse(v1.Relationship{
 			Resource: obj.Obj,
 			Relation: "view",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-type ObjProvisioner struct {
-	Obj *v1.ObjectReference
-	*Relationships
-}
-
-func Provisioner(id string) *ObjProvisioner {
-	o := &ObjProvisioner{
-		Obj: &v1.ObjectReference{
-			ObjectType: "provisioner",
-			ObjectId:   id,
-		},
-		Relationships: NewRelationships(),
-	}
-	allObjects = append(allObjects, o)
-	return o
-}
-
-func (obj *ObjProvisioner) Type() string {
-	return "provisioner"
-}
-
-func (obj *ObjProvisioner) Object() *v1.ObjectReference {
-	return obj.Obj
-}
-
-func (obj *ObjProvisioner) Owner(subs ...*ObjTeam) *ObjProvisioner {
-	for i := range subs {
-		sub := subs[i]
-		obj.AddRelation(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "owner",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Obj,
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjProvisioner) ValidateView() *ObjProvisioner {
-	obj.AddValidation(v1.Relationship{
-		Resource:       obj.Obj,
-		Relation:       "view",
-		OptionalCaveat: nil,
-	})
-	return obj
-}
-
-func (obj *ObjProvisioner) ValidateUse() *ObjProvisioner {
-	obj.AddValidation(v1.Relationship{
-		Resource:       obj.Obj,
-		Relation:       "use",
-		OptionalCaveat: nil,
-	})
-	return obj
-}
-
-func (obj *ObjProvisioner) CanViewBy(subs ...ObjectWithRelationships) *ObjProvisioner {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertTrue(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "view",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjProvisioner) CannotViewBy(subs ...ObjectWithRelationships) *ObjProvisioner {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertFalse(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "view",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjProvisioner) CanUseBy(subs ...ObjectWithRelationships) *ObjProvisioner {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertTrue(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "use",
-			Subject: &v1.SubjectReference{
-				Object:           sub.Object(),
-				OptionalRelation: "",
-			},
-			OptionalCaveat: nil,
-		})
-	}
-	return obj
-}
-
-func (obj *ObjProvisioner) CannotUseBy(subs ...ObjectWithRelationships) *ObjProvisioner {
-	for i := range subs {
-		sub := subs[i]
-		obj.AssertFalse(v1.Relationship{
-			Resource: obj.Obj,
-			Relation: "use",
 			Subject: &v1.SubjectReference{
 				Object:           sub.Object(),
 				OptionalRelation: "",

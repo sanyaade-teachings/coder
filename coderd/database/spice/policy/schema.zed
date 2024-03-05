@@ -43,13 +43,13 @@ definition organization {
 	// relatonship to the organization. This should be assigned for every user who is an organization member.
 	// TODO: Can we enforce this as a required relation if they have another?
 	//		 Something like (group#membership | user) & member
-	relation member: user
+	relation member: group#membership | user
 
 	/*******************
 	 * Workspace Roles *
 	 *******************/
 	// workspace_viewers can always view all workspace properties for all
-	// workspaces owned by an organization. 
+	// workspaces owned by an organization.
 	relation workspace_viewer: group#membership | user
 	// workspace_creator enables the granted to create workspace resources for
 	// the given organization.
@@ -84,7 +84,7 @@ definition organization {
 	// view all workspaces owned by the team
 	permission view_workspaces = platform->super_admin + workspace_viewer
 	permission edit_workspaces = platform->super_admin + workspace_editor
-	permission select_workspace_version = platform->super_admin + workspace_version_selector
+	permission select_workspace_version = platform->super_admin
 	permission delete_workspaces = platform->super_admin + workspace_deletor
 	// create_workspace is on the organization level object. A workspace that is created is owned by the organization
 	// and the application should setup the correct permissions/relations for the new resource.
@@ -94,7 +94,7 @@ definition organization {
 	/************************
 	 * Template Permissions *
 	 ************************/
-	permission view_templates = platform->super_admin + template_viewer 
+	permission view_templates = platform->super_admin + template_viewer
 	permission view_template_insights = platform->super_admin + template_insights_viewer
 	permission edit_templates = platform->super_admin + template_editor
 	permission delete_templates = platform->super_admin + template_deletor
@@ -144,3 +144,62 @@ definition workspace_build {
 	// Can view if the workspace->view perm exists
 	permission view = workspace->view
 }
+
+definition workspace_agent {
+	relation workspace: workspace
+
+	permission view = workspace->view
+}
+
+definition workspace_resources {
+	relation workspace: workspace
+
+	permission view = workspace->view
+}
+
+
+// Templates
+
+definition template {
+	// owning organization for pulling permissions through.
+	relation organization: organization
+	// workspace relates a given workspace to a template. This allows
+	// 'view' permission to be granted through the workspace, so a person who can
+	// view a workspce, can also view the template it is using.
+	// TODO: Add deleted caveat?
+	relation workspace: workspace
+
+	permission view = organization->template_viewer + workspace->view
+	permission view_insights = organization->view_template_insights
+	// Edit allows adding and promoting template versions.
+	permission edit = organization->edit_templates
+	permission delete = organization->delete_templates
+	permission edit_pemissions = organization->manage_template_permissions
+
+	// Use is permitted by the owning organization.
+	permission use = organization
+}
+
+definition template_version {
+	relation template: template
+
+	permission view = template->view
+}
+
+definition file {
+	relation template_version: template_version
+
+	permission view = template_version -> view
+}
+
+// Provisioners
+
+
+definition job {
+	relation template_version: template_version
+	relation workspace_build: workspace_build
+	// dry runs?
+
+	permission view = template_version->view + workspace_build->view
+}
+

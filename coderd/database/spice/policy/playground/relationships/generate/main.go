@@ -11,6 +11,7 @@ import (
 	core "github.com/authzed/spicedb/pkg/proto/core/v1"
 
 	"github.com/authzed/spicedb/pkg/schemadsl/compiler"
+
 	"github.com/coder/coder/v2/coderd/database/spice/policy"
 )
 
@@ -30,7 +31,7 @@ func Generate() string {
 	compiled, err := compiler.Compile(compiler.InputSchema{
 		Source:       "policy.zed",
 		SchemaString: policy.Schema,
-	}, &prefix)
+	}, compiler.ObjectTypePrefix(prefix))
 	if err != nil {
 		panic(err)
 	}
