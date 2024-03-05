@@ -4,60 +4,64 @@
 // Glossary: https://authzed.com/docs/reference/glossary
 // Zanzibar Term Mapping: https://authzed.com/docs/reference/glossary#mapping-terminology-from-the-zanzibar-paper
 
+definition user {
+
+}
+
+// group is a collection of users and operates exactly like a user from
+// a permissions pov.
+definition group {
+	// A member of a group can be:
+	// - A user
+	// - Another group (nesting)
+	// - 'user:*' is a wildcard that matches all users. For the Everyone group.
+	relation member: user | group#member | user:*
+
+	// membership is a synthetic permission that traverses the member relation
+	// of any nested groups.
+	permission membership = member
+}
+
 // platform is the site-wide level on the Coder product.
 definition platform {
+	// administrator is the "first user" assigned role that we call "owner".
+	// Avoid calling this relation an "owner" though as we use that term for ownership
+	// of specific resources.
 	relation administrator: user
+
 	// platform roles should only be used to escalate permissions above the "member" level.
-	// All platform members are just "user".
-
-
+	// All platform members are just "user". So add these with caution.
 	permission super_admin = administrator
 }
 
-
-// team is a collection of resources.
-// TODO: Should we call this a namespace?
-definition team {
-	// platform relation is the super admin level. All super-admin type permissions
-	// are passed through the team level.
+definition organization {
+	// platform relation is the site level (site owner). All super-admin type permissions
+	// are passed through the organization level.
 	relation platform: platform
 
-	// parent allows nesting teams. Nested teams inherit the permissions from
-    // their parents. So if a user has permissions in a parent team, they have the same
-    // permissions in the child.
-	relation parent: team
-
-	// Teams have their own roles for user's to interact with team resources.
-	// Each role can be either a group or a user.
-
-	// member role is the most primitive role in a team. It grants 0 permissions, and just builds the
-	// relatonship to the team.
-	relation member: group#membership | user
+	// member role is the most primitive role in an organization. It grants 0 permissions, and just builds the
+	// relatonship to the organization. This should be assigned for every user who is an organization member.
+	// TODO: Can we enforce this as a required relation if they have another?
+	//		 Something like (group#membership | user) & member
+	relation member: user
 
 	/*******************
 	 * Workspace Roles *
 	 *******************/
 	// workspace_viewers can always view all workspace properties for all
-	// workspaces owned by a team.
+	// workspaces owned by an organization. 
 	relation workspace_viewer: group#membership | user
 	// workspace_creator enables the granted to create workspace resources for
-	// the given team. The workspace will only be created if the user also has permissions
-	// for a template + provisioner to fully provision the workspace.
+	// the given organization.
 	relation workspace_creator: group#membership | user
-	// workspace_deletor allows the delete permission to all team workspaces.
+	// workspace_deletor allows the delete permission to all organization workspaces.
 	relation workspace_deletor: group#membership | user
-	// workspace_version_selector grants the permission to update workspaces
-	// chosen template versions for the team.
-	// TODO: Template version policies affect this?
-	relation workspace_version_selector: group#membership | user
-	// dangerous_workspace_connector allows ssh/connect access to all team workspaces.
-	// This is a dangerous relation to grant, and should only be granted on a per workspace
-	// basis.
-	relation dangerous_workspace_connector: group#membership | user
 	// workspace_editor allows editing a workspace's settings, build parameters, schedule,
 	// etc.
 	relation workspace_editor: group#membership | user
-
+	// Other ideas:
+	// - workspace_version_selector :: Template admins to update workspaces
+	// - dangerous_workspace_connector :: SSH access to all workspaces
 
 	/*******************
 	 * Template Roles *
@@ -69,81 +73,47 @@ definition team {
 	relation template_permission_manager: group#membership | user
 	relation template_insights_viewer: group#membership | user
 
-
-	/*******************
-	 * Provisioner Roles *
-	 *******************/
-	relation provisioner_viewer: group#membership | user
-	relation provisioner_creator: group#membership | user
-	relation provisioner_deletor: group#membership | user
-	relation provisioner_editor: group#membership | user
-
-	/*******************
+	/***************
 	 * Other Roles *
-	 *******************/
+	 ***************/
 
-	// direct_membership needs to include all ways in which someone is a member of this team.
-	// This does not include parent team members.
-	permission direct_membership = member +
-		workspace_viewer + workspace_creator + workspace_deletor + workspace_version_selector + dangerous_workspace_connector + workspace_editor +
-		template_viewer + template_creator + template_deletor + template_editor
 
 	/*************************
 	 * Workspace Permissions *
 	 *************************/
 	// view all workspaces owned by the team
-	permission view_workspaces = platform->super_admin + workspace_viewer + parent->view_workspaces
-	permission edit_workspaces = platform->super_admin + workspace_editor + parent->edit_workspaces
-	permission select_workspace_version = platform->super_admin + workspace_version_selector + parent->select_workspace_version
-	permission delete_workspaces = platform->super_admin + workspace_deletor + parent->delete_workspaces
-	permission connect_workspaces = dangerous_workspace_connector + parent->connect_workspaces
-	// create_workspace is on the team level object. A workspace that is created is owned by the team
+	permission view_workspaces = platform->super_admin + workspace_viewer
+	permission edit_workspaces = platform->super_admin + workspace_editor
+	permission select_workspace_version = platform->super_admin + workspace_version_selector
+	permission delete_workspaces = platform->super_admin + workspace_deletor
+	// create_workspace is on the organization level object. A workspace that is created is owned by the organization
 	// and the application should setup the correct permissions/relations for the new resource.
-	permission create_workspace = platform->super_admin + workspace_creator + parent->create_workspace
+	permission create_workspace = platform->super_admin + workspace_creator
+
 
 	/************************
 	 * Template Permissions *
 	 ************************/
-	permission view_templates = platform->super_admin + template_viewer + parent->view_templates
-	permission view_template_insights = platform->super_admin + template_insights_viewer + parent->view_template_insights
-	permission edit_templates = platform->super_admin + template_editor + parent->edit_templates
-	permission delete_templates = platform->super_admin + template_deletor + parent->delete_templates
-	permission manage_template_permissions = platform->super_admin + template_permission_manager + parent->manage_template_permissions
+	permission view_templates = platform->super_admin + template_viewer 
+	permission view_template_insights = platform->super_admin + template_insights_viewer
+	permission edit_templates = platform->super_admin + template_editor
+	permission delete_templates = platform->super_admin + template_deletor
+	permission manage_template_permissions = platform->super_admin + template_permission_manager
 	// Creating a template, version, and file are all the same permissions
-	permission create_template = platform->super_admin + template_creator + parent->create_template
+	permission create_template = platform->super_admin + template_creator
 	permission create_template_version = create_template
 	permission create_file = create_template
-
-
-	/************************
-	 * Provisioner Permissions *
-	 ************************/
-	permission view_provisioners = platform->super_admin + template_viewer + parent->view_provisioners
-	permission edit_provisioners = platform->super_admin + template_editor + parent->edit_provisioners
-	permission delete_provisioners = platform->super_admin + template_deletor + parent->delete_provisioners
-	permission create_provisioners = platform->super_admin + template_creator + parent->create_provisioners
 }
 
-// group is a collection of users and operates exactly like a user from
-// a permissions pov.
-definition group {
-	// The wildcard user is allowed on groups to make the "everyone" group.
-	relation member: user | group#member | user:*
-	permission membership = member
-}
-
-definition user {
-
-}
 
 // Resources
 
-// workspace's are owned and controlled by a team. Users must be granted permission to interact
+// workspace's are owned and controlled by an organization. Users must be granted permission to interact
 // with the team operated workspace. Most workspaces will only have 1 user with granted permissions.
 // This mean from the policy's perspective, a user does not own their own workspaces.
 definition workspace {
-	// owning team for pulling permissions through.
-	relation owner: team
+	// owning organization for pulling permissions through.
+	relation organization: organization
 	// Individually granted permissions
 	relation viewer: group#membership | user
 	relation editor: group#membership | user
@@ -151,18 +121,18 @@ definition workspace {
 	relation selector: group#membership | user
 	relation connector: group#membership | user
 
-	// The permissions come from the owning team roles, or individually granted
-	// permissions. The individual grants must still be apart of the team.
+	// The permissions come from the owning organization roles, or individually granted
+	// permissions. The individual grants must still be apart of the organization.
 	permission view =
 	// Some perms require view as well
 	edit + delete + select_template_version + ssh +
 	// Give view permissons to any role that requires reading the workspace to conduct their actions.
-	owner->view_workspaces + viewer
-	permission edit = owner->edit_workspaces + editor
-	permission delete = owner->delete_workspaces + deletor
+	organization->view_workspaces + viewer
+	permission edit = organization->edit_workspaces + editor
+	permission delete = organization->delete_workspaces + deletor
 	// TODO: Maybe a caveat to check if the selected version is the active template version, and if that is allowed.
-	permission select_template_version = owner->select_workspace_version + selector
-	permission ssh = owner->connect_workspaces + connector
+	permission select_template_version = organization->select_workspace_version + selector
+	permission ssh = connector
 }
 
 definition workspace_build {
@@ -173,80 +143,4 @@ definition workspace_build {
 
 	// Can view if the workspace->view perm exists
 	permission view = workspace->view
-}
-
-// worspace_app 'connect' value is controlled by the workspace.
-definition worspace_app {
-	relation workspace: workspace
-
-	permission view = workspace->view
-	// TODO: This perm might be excessive, as we will probably check on the workspace?
-	permission connect = workspace->ssh
-}
-
-definition workspace_agent {
-	relation workspace: workspace
-
-	permission view = workspace->view
-}
-
-definition workspace_resources {
-	relation workspace: workspace
-
-	permission view = workspace->view
-}
-
-
-// Templates
-
-definition template {
-	// owning team for pulling permissions through.
-	relation owner: team
-	// workspace relates a given workspace to a template. This allows
-	// 'view' permission to be granted through the workspace, so a person who can
-	// view a workspce, can also view the template it is using.
-	// TODO: Add deleted caveat?
-	relation workspace: workspace
-
-	permission view = owner->template_viewer + workspace->view
-	permission view_insights = owner->view_template_insights
-	// Edit allows adding and promoting template versions.
-	permission edit = owner->edit_templates
-	permission delete = owner->delete_templates
-	permission edit_pemissions = owner->manage_template_permissions
-
-	// Use is permitted by the owning team.
-	permission use = owner + owner->parent
-}
-
-definition template_version {
-	relation template: template
-
-	permission view = template->view
-}
-
-definition file {
-	relation template_version: template_version
-
-	permission view = template_version -> view
-}
-
-// TODO: How do we handle provisioners? Should we keep using tags?
-// Add actual relations?
-definition provisioner {
-	// owning team for pulling permissions through.
-	relation owner: team
-
-	permission view = owner -> view_provisioners
-
-	// Use is permitted by the owning team.
-	permission use = owner
-}
-
-definition job {
-	relation template_version: template_version
-	relation workspace_build: workspace_build
-	// dry runs?
-
-	permission view = template_version->view + workspace_build->view
 }
