@@ -25,6 +25,7 @@ import (
 	"github.com/authzed/spicedb/pkg/cmd/server"
 	"github.com/authzed/spicedb/pkg/cmd/util"
 
+	"github.com/coder/coder/v2/coderd/database/spice"
 	"github.com/coder/coder/v2/coderd/database/spice/policy"
 	"github.com/coder/coder/v2/coderd/database/spice/policy/playground/relationships"
 )
@@ -99,8 +100,8 @@ func RunExample(ctx context.Context) error {
 			if debugInfo.Check == nil {
 				log.Println("No trace found for the check")
 			} else {
-				tp := NewTreePrinter()
-				DisplayCheckTrace(debugInfo.Check, tp, false)
+				tp := spice.NewTreePrinter()
+				spice.DisplayCheckTrace(debugInfo.Check, tp, false)
 				tp.Print()
 			}
 		}
@@ -150,10 +151,6 @@ func newServer(ctx context.Context) (server.RunnableServer, error) {
 	)
 	if err != nil {
 		log.Fatalf("unable to start postgres datastore: %s", err)
-	}
-
-	ds = &DatastoreWrapper{
-		Datastore: ds,
 	}
 
 	configOpts := []server.ConfigOption{
