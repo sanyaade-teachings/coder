@@ -1,4 +1,4 @@
-package spice
+package main
 
 // From https://github.com/authzed/zed/blob/main/internal/printers/debug.go
 // Internal package :cry:

@@ -1,4 +1,4 @@
-package spice
+package main
 
 import (
 	"context"
@@ -25,13 +25,11 @@ import (
 	"github.com/authzed/spicedb/pkg/cmd/server"
 	"github.com/authzed/spicedb/pkg/cmd/util"
 
+	"github.com/coder/coder/v2/coderd/database/spice/policy"
 	"github.com/coder/coder/v2/coderd/database/spice/policy/playground/relationships"
 )
 
 var _ = v1.NewSchemaServiceClient
-
-//go:embed policy/schema.zed
-var schema string
 
 func RunExample(ctx context.Context) error {
 	srv, err := newServer(ctx)
@@ -53,7 +51,7 @@ func RunExample(ctx context.Context) error {
 	}()
 
 	_, err = schemaSrv.WriteSchema(ctx, &v1.WriteSchemaRequest{
-		Schema: schema,
+		Schema: policy.Schema,
 	})
 	if err != nil {
 		return err

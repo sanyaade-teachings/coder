@@ -1,4 +1,4 @@
-package spice
+package main
 
 import (
 	"context"
