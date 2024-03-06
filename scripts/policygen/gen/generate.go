@@ -47,7 +47,11 @@ func Generate(schema string, opts GenerateOptions) (string, error) {
 	_, _ = output.WriteString("\n")
 	_, _ = output.WriteString(fmt.Sprintf(`package %s`, opts.Package))
 	_, _ = output.WriteString("\n")
-	_, _ = output.WriteString(`import v1 "github.com/authzed/authzed-go/proto/authzed/api/v1"`)
+	_, _ = output.WriteString(`import (
+	v1 "github.com/authzed/authzed-go/proto/authzed/api/v1"
+
+	"fmt"
+)`)
 	_, _ = output.WriteString("\n")
 
 	// sort order for consistency

@@ -3,11 +3,11 @@ type Obj{{ capitalize .Name }} struct {
 	Relationships []v1.Relationship
 }
 
-func {{ capitalize .Name }}(id string) *Obj{{ capitalize .Name }} {
+func {{ capitalize .Name }}(id fmt.Stringer) *Obj{{ capitalize .Name }} {
 	o := &Obj{{ capitalize .Name }}{
 		Obj: &v1.ObjectReference{
 			ObjectType: "{{ .Name }}",
-			ObjectId:   id,
+			ObjectId:   id.String(),
 		},
 		Relationships: []v1.Relationship{},
 	}

@@ -1,18 +1,22 @@
 // Package relationships code generated. DO NOT EDIT.
 package policy
 
-import v1 "github.com/authzed/authzed-go/proto/authzed/api/v1"
+import (
+	v1 "github.com/authzed/authzed-go/proto/authzed/api/v1"
+
+	"fmt"
+)
 
 type ObjFile struct {
 	Obj           *v1.ObjectReference
 	Relationships []v1.Relationship
 }
 
-func File(id string) *ObjFile {
+func File(id fmt.Stringer) *ObjFile {
 	o := &ObjFile{
 		Obj: &v1.ObjectReference{
 			ObjectType: "file",
-			ObjectId:   id,
+			ObjectId:   id.String(),
 		},
 		Relationships: []v1.Relationship{},
 	}
@@ -44,11 +48,11 @@ type ObjGroup struct {
 	Relationships []v1.Relationship
 }
 
-func Group(id string) *ObjGroup {
+func Group(id fmt.Stringer) *ObjGroup {
 	o := &ObjGroup{
 		Obj: &v1.ObjectReference{
 			ObjectType: "group",
-			ObjectId:   id,
+			ObjectId:   id.String(),
 		},
 		Relationships: []v1.Relationship{},
 	}
@@ -112,11 +116,11 @@ type ObjJob struct {
 	Relationships []v1.Relationship
 }
 
-func Job(id string) *ObjJob {
+func Job(id fmt.Stringer) *ObjJob {
 	o := &ObjJob{
 		Obj: &v1.ObjectReference{
 			ObjectType: "job",
-			ObjectId:   id,
+			ObjectId:   id.String(),
 		},
 		Relationships: []v1.Relationship{},
 	}
@@ -164,11 +168,11 @@ type ObjOrganization struct {
 	Relationships []v1.Relationship
 }
 
-func Organization(id string) *ObjOrganization {
+func Organization(id fmt.Stringer) *ObjOrganization {
 	o := &ObjOrganization{
 		Obj: &v1.ObjectReference{
 			ObjectType: "organization",
-			ObjectId:   id,
+			ObjectId:   id.String(),
 		},
 		Relationships: []v1.Relationship{},
 	}
@@ -552,11 +556,11 @@ type ObjPlatform struct {
 	Relationships []v1.Relationship
 }
 
-func Platform(id string) *ObjPlatform {
+func Platform(id fmt.Stringer) *ObjPlatform {
 	o := &ObjPlatform{
 		Obj: &v1.ObjectReference{
 			ObjectType: "platform",
-			ObjectId:   id,
+			ObjectId:   id.String(),
 		},
 		Relationships: []v1.Relationship{},
 	}
@@ -588,11 +592,11 @@ type ObjTemplate struct {
 	Relationships []v1.Relationship
 }
 
-func Template(id string) *ObjTemplate {
+func Template(id fmt.Stringer) *ObjTemplate {
 	o := &ObjTemplate{
 		Obj: &v1.ObjectReference{
 			ObjectType: "template",
-			ObjectId:   id,
+			ObjectId:   id.String(),
 		},
 		Relationships: []v1.Relationship{},
 	}
@@ -640,11 +644,11 @@ type ObjTemplate_version struct {
 	Relationships []v1.Relationship
 }
 
-func Template_version(id string) *ObjTemplate_version {
+func Template_version(id fmt.Stringer) *ObjTemplate_version {
 	o := &ObjTemplate_version{
 		Obj: &v1.ObjectReference{
 			ObjectType: "template_version",
-			ObjectId:   id,
+			ObjectId:   id.String(),
 		},
 		Relationships: []v1.Relationship{},
 	}
@@ -676,11 +680,11 @@ type ObjUser struct {
 	Relationships []v1.Relationship
 }
 
-func User(id string) *ObjUser {
+func User(id fmt.Stringer) *ObjUser {
 	o := &ObjUser{
 		Obj: &v1.ObjectReference{
 			ObjectType: "user",
-			ObjectId:   id,
+			ObjectId:   id.String(),
 		},
 		Relationships: []v1.Relationship{},
 	}
@@ -696,11 +700,11 @@ type ObjWorkspace struct {
 	Relationships []v1.Relationship
 }
 
-func Workspace(id string) *ObjWorkspace {
+func Workspace(id fmt.Stringer) *ObjWorkspace {
 	o := &ObjWorkspace{
 		Obj: &v1.ObjectReference{
 			ObjectType: "workspace",
-			ObjectId:   id,
+			ObjectId:   id.String(),
 		},
 		Relationships: []v1.Relationship{},
 	}
@@ -887,16 +891,48 @@ func (obj *ObjWorkspace) ConnectorUser(subs ...*ObjUser) *ObjWorkspace {
 	return obj
 }
 
+func (obj *ObjWorkspace) For_userGroup(subs ...*ObjGroup) *ObjWorkspace {
+	for i := range subs {
+		sub := subs[i]
+		obj.Relationships = append(obj.Relationships, v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "for_user",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "membership",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjWorkspace) For_userUser(subs ...*ObjUser) *ObjWorkspace {
+	for i := range subs {
+		sub := subs[i]
+		obj.Relationships = append(obj.Relationships, v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "for_user",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
 type ObjWorkspace_agent struct {
 	Obj           *v1.ObjectReference
 	Relationships []v1.Relationship
 }
 
-func Workspace_agent(id string) *ObjWorkspace_agent {
+func Workspace_agent(id fmt.Stringer) *ObjWorkspace_agent {
 	o := &ObjWorkspace_agent{
 		Obj: &v1.ObjectReference{
 			ObjectType: "workspace_agent",
-			ObjectId:   id,
+			ObjectId:   id.String(),
 		},
 		Relationships: []v1.Relationship{},
 	}
@@ -928,11 +964,11 @@ type ObjWorkspace_build struct {
 	Relationships []v1.Relationship
 }
 
-func Workspace_build(id string) *ObjWorkspace_build {
+func Workspace_build(id fmt.Stringer) *ObjWorkspace_build {
 	o := &ObjWorkspace_build{
 		Obj: &v1.ObjectReference{
 			ObjectType: "workspace_build",
-			ObjectId:   id,
+			ObjectId:   id.String(),
 		},
 		Relationships: []v1.Relationship{},
 	}
@@ -964,11 +1000,11 @@ type ObjWorkspace_resources struct {
 	Relationships []v1.Relationship
 }
 
-func Workspace_resources(id string) *ObjWorkspace_resources {
+func Workspace_resources(id fmt.Stringer) *ObjWorkspace_resources {
 	o := &ObjWorkspace_resources{
 		Obj: &v1.ObjectReference{
 			ObjectType: "workspace_resources",
-			ObjectId:   id,
+			ObjectId:   id.String(),
 		},
 		Relationships: []v1.Relationship{},
 	}

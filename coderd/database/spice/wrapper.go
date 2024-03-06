@@ -14,7 +14,11 @@ func (s *SpiceDB) InsertWorkspace(ctx context.Context, arg database.InsertWorksp
 			return err
 		}
 
-		policy.Workspace(workspace.ID.String()).ViewerUser()
+		org := policy.Organization(workspace.OrganizationID)
+		owner := policy.User(workspace.OwnerID)
+		policy.Workspace(workspace.ID).
+			For_userUser(owner).
+			Organization(org)
 
 		// Insert relationships
 		//workspace.
