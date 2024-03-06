@@ -153,7 +153,7 @@ func newDef(obj *core.NamespaceDefinition) objectDefinition {
 		//
 		// If we only have 1 subject, we do not need the suffix.
 		// If someone could find a typesafe argument pattern with generics, that would be great.
-		if len(multipleSubjects) > 0 {
+		if len(multipleSubjects) > 1 {
 			for i := range multipleSubjects {
 				multipleSubjects[i].FunctionName += capitalize(multipleSubjects[i].Subject.Object.ObjectType)
 			}

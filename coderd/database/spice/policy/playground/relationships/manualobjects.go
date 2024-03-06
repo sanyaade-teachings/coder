@@ -156,7 +156,7 @@ func WorkspaceWithDeps(id string, organization *ObjOrganization, template *ObjTe
 		Workspace(workspace)
 	agent := Workspace_agent(fmt.Sprintf("%s/agent", id)).
 		Workspace(workspace)
-	//app := Worspace_app(fmt.Sprintf("%s/app", id)).
+	// app := Worspace_app(fmt.Sprintf("%s/app", id)).
 	//	Workspace(workspace)
 	resources := Workspace_resources(fmt.Sprintf("%s/resources", id)).
 		Workspace(workspace)

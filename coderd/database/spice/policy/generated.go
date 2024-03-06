@@ -23,11 +23,7 @@ func (obj *ObjFile) Type() string {
 	return "file"
 }
 
-func (obj *ObjFile) Object() *v1.ObjectReference {
-	return obj.Obj
-}
-
-func (obj *ObjFile) Template_versionTemplate_version(subs ...*ObjTemplate_version) *ObjFile {
+func (obj *ObjFile) Template_version(subs ...*ObjTemplate_version) *ObjFile {
 	for i := range subs {
 		sub := subs[i]
 		obj.Relationships = append(obj.Relationships, v1.Relationship{
@@ -61,10 +57,6 @@ func Group(id string) *ObjGroup {
 
 func (obj *ObjGroup) Type() string {
 	return "group"
-}
-
-func (obj *ObjGroup) Object() *v1.ObjectReference {
-	return obj.Obj
 }
 
 func (obj *ObjGroup) MemberUser(subs ...*ObjUser) *ObjGroup {
@@ -135,11 +127,7 @@ func (obj *ObjJob) Type() string {
 	return "job"
 }
 
-func (obj *ObjJob) Object() *v1.ObjectReference {
-	return obj.Obj
-}
-
-func (obj *ObjJob) Template_versionTemplate_version(subs ...*ObjTemplate_version) *ObjJob {
+func (obj *ObjJob) Template_version(subs ...*ObjTemplate_version) *ObjJob {
 	for i := range subs {
 		sub := subs[i]
 		obj.Relationships = append(obj.Relationships, v1.Relationship{
@@ -155,7 +143,7 @@ func (obj *ObjJob) Template_versionTemplate_version(subs ...*ObjTemplate_version
 	return obj
 }
 
-func (obj *ObjJob) Workspace_buildWorkspace_build(subs ...*ObjWorkspace_build) *ObjJob {
+func (obj *ObjJob) Workspace_build(subs ...*ObjWorkspace_build) *ObjJob {
 	for i := range subs {
 		sub := subs[i]
 		obj.Relationships = append(obj.Relationships, v1.Relationship{
@@ -191,11 +179,7 @@ func (obj *ObjOrganization) Type() string {
 	return "organization"
 }
 
-func (obj *ObjOrganization) Object() *v1.ObjectReference {
-	return obj.Obj
-}
-
-func (obj *ObjOrganization) PlatformPlatform(subs ...*ObjPlatform) *ObjOrganization {
+func (obj *ObjOrganization) Platform(subs ...*ObjPlatform) *ObjOrganization {
 	for i := range subs {
 		sub := subs[i]
 		obj.Relationships = append(obj.Relationships, v1.Relationship{
@@ -583,11 +567,7 @@ func (obj *ObjPlatform) Type() string {
 	return "platform"
 }
 
-func (obj *ObjPlatform) Object() *v1.ObjectReference {
-	return obj.Obj
-}
-
-func (obj *ObjPlatform) AdministratorUser(subs ...*ObjUser) *ObjPlatform {
+func (obj *ObjPlatform) Administrator(subs ...*ObjUser) *ObjPlatform {
 	for i := range subs {
 		sub := subs[i]
 		obj.Relationships = append(obj.Relationships, v1.Relationship{
@@ -623,11 +603,7 @@ func (obj *ObjTemplate) Type() string {
 	return "template"
 }
 
-func (obj *ObjTemplate) Object() *v1.ObjectReference {
-	return obj.Obj
-}
-
-func (obj *ObjTemplate) OrganizationOrganization(subs ...*ObjOrganization) *ObjTemplate {
+func (obj *ObjTemplate) Organization(subs ...*ObjOrganization) *ObjTemplate {
 	for i := range subs {
 		sub := subs[i]
 		obj.Relationships = append(obj.Relationships, v1.Relationship{
@@ -643,7 +619,7 @@ func (obj *ObjTemplate) OrganizationOrganization(subs ...*ObjOrganization) *ObjT
 	return obj
 }
 
-func (obj *ObjTemplate) WorkspaceWorkspace(subs ...*ObjWorkspace) *ObjTemplate {
+func (obj *ObjTemplate) Workspace(subs ...*ObjWorkspace) *ObjTemplate {
 	for i := range subs {
 		sub := subs[i]
 		obj.Relationships = append(obj.Relationships, v1.Relationship{
@@ -679,11 +655,7 @@ func (obj *ObjTemplate_version) Type() string {
 	return "template_version"
 }
 
-func (obj *ObjTemplate_version) Object() *v1.ObjectReference {
-	return obj.Obj
-}
-
-func (obj *ObjTemplate_version) TemplateTemplate(subs ...*ObjTemplate) *ObjTemplate_version {
+func (obj *ObjTemplate_version) Template(subs ...*ObjTemplate) *ObjTemplate_version {
 	for i := range subs {
 		sub := subs[i]
 		obj.Relationships = append(obj.Relationships, v1.Relationship{
@@ -719,10 +691,6 @@ func (obj *ObjUser) Type() string {
 	return "user"
 }
 
-func (obj *ObjUser) Object() *v1.ObjectReference {
-	return obj.Obj
-}
-
 type ObjWorkspace struct {
 	Obj           *v1.ObjectReference
 	Relationships []v1.Relationship
@@ -743,11 +711,7 @@ func (obj *ObjWorkspace) Type() string {
 	return "workspace"
 }
 
-func (obj *ObjWorkspace) Object() *v1.ObjectReference {
-	return obj.Obj
-}
-
-func (obj *ObjWorkspace) OrganizationOrganization(subs ...*ObjOrganization) *ObjWorkspace {
+func (obj *ObjWorkspace) Organization(subs ...*ObjOrganization) *ObjWorkspace {
 	for i := range subs {
 		sub := subs[i]
 		obj.Relationships = append(obj.Relationships, v1.Relationship{
@@ -943,11 +907,7 @@ func (obj *ObjWorkspace_agent) Type() string {
 	return "workspace_agent"
 }
 
-func (obj *ObjWorkspace_agent) Object() *v1.ObjectReference {
-	return obj.Obj
-}
-
-func (obj *ObjWorkspace_agent) WorkspaceWorkspace(subs ...*ObjWorkspace) *ObjWorkspace_agent {
+func (obj *ObjWorkspace_agent) Workspace(subs ...*ObjWorkspace) *ObjWorkspace_agent {
 	for i := range subs {
 		sub := subs[i]
 		obj.Relationships = append(obj.Relationships, v1.Relationship{
@@ -983,11 +943,7 @@ func (obj *ObjWorkspace_build) Type() string {
 	return "workspace_build"
 }
 
-func (obj *ObjWorkspace_build) Object() *v1.ObjectReference {
-	return obj.Obj
-}
-
-func (obj *ObjWorkspace_build) WorkspaceWorkspace(subs ...*ObjWorkspace) *ObjWorkspace_build {
+func (obj *ObjWorkspace_build) Workspace(subs ...*ObjWorkspace) *ObjWorkspace_build {
 	for i := range subs {
 		sub := subs[i]
 		obj.Relationships = append(obj.Relationships, v1.Relationship{
@@ -1023,11 +979,7 @@ func (obj *ObjWorkspace_resources) Type() string {
 	return "workspace_resources"
 }
 
-func (obj *ObjWorkspace_resources) Object() *v1.ObjectReference {
-	return obj.Obj
-}
-
-func (obj *ObjWorkspace_resources) WorkspaceWorkspace(subs ...*ObjWorkspace) *ObjWorkspace_resources {
+func (obj *ObjWorkspace_resources) Workspace(subs ...*ObjWorkspace) *ObjWorkspace_resources {
 	for i := range subs {
 		sub := subs[i]
 		obj.Relationships = append(obj.Relationships, v1.Relationship{

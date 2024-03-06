@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/coder/coder/v2/coderd/database"
+	"github.com/coder/coder/v2/coderd/database/spice/policy"
 )
 
 func (s *SpiceDB) InsertWorkspace(ctx context.Context, arg database.InsertWorkspaceParams) (database.Workspace, error) {
@@ -13,9 +14,11 @@ func (s *SpiceDB) InsertWorkspace(ctx context.Context, arg database.InsertWorksp
 			return err
 		}
 
+		policy.Workspace(workspace.ID.String()).ViewerUser()
+
 		// Insert relationships
-		workspace.
-		s.WriteRelationship(ctx)
+		//workspace.
+		//s.WriteRelationship(ctx)
 		return nil
 	}, nil)
 

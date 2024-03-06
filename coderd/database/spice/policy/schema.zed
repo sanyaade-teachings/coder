@@ -5,7 +5,6 @@
 // Zanzibar Term Mapping: https://authzed.com/docs/reference/glossary#mapping-terminology-from-the-zanzibar-paper
 
 definition user {
-
 }
 
 // group is a collection of users and operates exactly like a user from
@@ -34,6 +33,7 @@ definition platform {
 	permission super_admin = administrator
 }
 
+// TODO: Organization member
 definition organization {
 	// platform relation is the site level (site owner). All super-admin type permissions
 	// are passed through the organization level.
@@ -178,6 +178,9 @@ definition template {
 
 	// Use is permitted by the owning organization.
 	permission use = organization
+
+	// Synthetic view
+	permission workspace_view = workspace->view
 }
 
 definition template_version {

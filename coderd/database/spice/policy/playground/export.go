@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/coder/coder/v2/coderd/database/spice/policy/playground/relationships"
 	"gopkg.in/yaml.v3"
+
+	"github.com/coder/coder/v2/coderd/database/spice/policy/playground/relationships"
 
 	"github.com/coder/coder/v2/coderd/database/spice/policy"
 )
