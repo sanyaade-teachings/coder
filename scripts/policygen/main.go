@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 
@@ -8,11 +9,26 @@ import (
 	"github.com/coder/coder/v2/scripts/policygen/gen"
 )
 
+var destination = flag.String("destination", "", "destination file")
+
 func main() {
+	flag.Parse()
+
 	out, err := gen.Generate(policy.Schema)
 	if err != nil {
 		fmt.Fprint(os.Stderr, err.Error())
 		os.Exit(1)
 	}
-	fmt.Println(out)
+
+	if *destination == "" {
+		fmt.Println(out)
+		return
+	}
+
+	fmt.Println("Writing to", *destination)
+	//err = os.WriteFile(*destination, []byte(out), 0644)
+	if err != nil {
+		fmt.Fprint(os.Stderr, err.Error())
+		os.Exit(1)
+	}
 }

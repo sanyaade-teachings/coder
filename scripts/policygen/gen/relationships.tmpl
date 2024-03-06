@@ -11,7 +11,6 @@ func {{ capitalize .Name }}(id string) *Obj{{ capitalize .Name }} {
 		},
 		Relationships: []v1.Relationship{},
 	}
-	allObjects = append(allObjects, o)
 	return o
 }
 
@@ -25,7 +24,7 @@ func (obj *Obj{{ capitalize $outerName }}) Object() *v1.ObjectReference {
 }
 
 {{ range $index, $element := .DirectRelations }}
-{{ /* Wildcard '*' is a keyword for spicedb to represent 'all objects of this type' */ }}
+{{/* Wildcard '*' is a keyword for spicedb to represent 'all objects of this type' */}}
 {{ if eq $element.Subject.Object.ObjectId "*" }}
 func (obj *Obj{{ capitalize $outerName }}) {{ capitalize $element.RelationName }}Wildcard() *Obj{{ capitalize $outerName }}{
 	obj.Relationships = append(obj.Relationships, v1.Relationship{
@@ -39,7 +38,7 @@ func (obj *Obj{{ capitalize $outerName }}) {{ capitalize $element.RelationName }
 			OptionalRelation: "{{ $element.Subject.OptionalRelation }}",
 		},
 		OptionalCaveat: nil,
-	}))
+	})
 	return obj
 }
 
@@ -56,7 +55,7 @@ func (obj *Obj{{ capitalize $outerName }}) {{ capitalize $element.FunctionName }
 				OptionalRelation: "{{ $element.Subject.OptionalRelation }}",
 			},
 			OptionalCaveat: nil,
-		}))
+		})
 	}
 	return obj
 }

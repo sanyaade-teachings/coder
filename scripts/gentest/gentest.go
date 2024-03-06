@@ -1,13 +1,17 @@
 package gentest
 
 import (
+	"flag"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"golang.org/x/xerrors"
 )
+
+var updateGoldenFiles = flag.Bool("update", false, "Update golden files")
 
 type TestGenerationParams struct {
 	Generate        func(dir string) (string, error)
@@ -15,14 +19,35 @@ type TestGenerationParams struct {
 	GoldenExtension string
 }
 
+func FindFileWithExtension(dir string, extension string) (string, error) {
+	if len(extension) == 0 {
+		return "", xerrors.Errorf("empty extension")
+	}
+	if extension[0] != '.' {
+		extension = "." + extension
+	}
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return "", xerrors.Errorf("read dir %q: %w", dir, err)
+	}
+	for _, entry := range entries {
+		if filepath.Ext(entry.Name()) == extension {
+			return entry.Name(), nil
+		}
+	}
+	return "", xerrors.Errorf("file with extension %q not found in %q", extension, dir)
+}
+
 // TestGeneration will perform a generate command and compare it to a golden file
 // with the expected output.
 func TestGeneration(t *testing.T, params TestGenerationParams) {
+	t.Helper()
+
 	if !strings.HasPrefix(".", params.GoldenExtension) {
 		params.GoldenExtension = "." + params.GoldenExtension
 	}
 	files, err := os.ReadDir(params.TestDataDir)
-	require.NoError(t, err, "read dir")
+	require.NoErrorf(t, err, "read dir: %s", params.TestDataDir)
 
 	for _, f := range files {
 		if !f.IsDir() {
@@ -37,18 +62,17 @@ func TestGeneration(t *testing.T, params TestGenerationParams) {
 			output, err := params.Generate("./" + dir)
 			require.NoErrorf(t, err, "generate %q", dir)
 
-			var goldenFile string
-			entries, err := os.ReadDir(dir)
-			require.NoError(t, err, "read dir")
-			for _, entry := range entries {
-				if filepath.Ext(entry.Name()) == params.GoldenExtension {
-					goldenFile = entry.Name()
-					break
-				}
-			}
-			require.NotEmpty(t, goldenFile, "golden file not found")
+			goldenFile, err := FindFileWithExtension(dir, params.GoldenExtension)
+			require.NoError(t, err, "find golden file")
 
 			golden := filepath.Join(dir, goldenFile)
+
+			if *updateGoldenFiles {
+				err = os.WriteFile(golden, []byte(output), 0644)
+				require.NoErrorf(t, err, "write file %s", golden)
+				return
+			}
+
 			expected, err := os.ReadFile(golden)
 			require.NoErrorf(t, err, "read file %s", golden)
 			expectedString := strings.TrimSpace(string(expected))

@@ -26,7 +26,7 @@ func Generate(schema string) (string, error) {
 		return "", xerrors.Errorf("compile schema: %w", err)
 	}
 
-	tpl, err := template.New("spice_objects").Funcs(template.FuncMap{
+	tpl, err := template.New("relationships.tmpl").Funcs(template.FuncMap{
 		"capitalize": capitalize,
 	}).Parse(templateText)
 	if err != nil {
