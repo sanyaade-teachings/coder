@@ -10,16 +10,22 @@ import (
 	"golang.org/x/xerrors"
 
 	"cdr.dev/slog"
+	"github.com/coder/coder/v2/coderd/database"
 )
 
 type SpiceServerOpts struct {
 	// If 'PostgresURI' is empty, will default to in memory
 	PostgresURI string
 	Logger      slog.Logger
+	Store       database.Store
 }
 
 // TODO: Handle PG vs Memory
 func New(ctx context.Context, opts *SpiceServerOpts) (*SpiceDB, error) {
+	if opts.Store == nil {
+		return nil, xerrors.Errorf("store is required")
+	}
+
 	engine := datastore.MemoryEngine
 	if opts.PostgresURI != "" {
 		engine = datastore.PostgresEngine
@@ -108,6 +114,7 @@ func New(ctx context.Context, opts *SpiceServerOpts) (*SpiceDB, error) {
 	}
 
 	return &SpiceDB{
+		Store:  opts.Store,
 		logger: opts.Logger,
 		srv:    runnable,
 	}, nil
