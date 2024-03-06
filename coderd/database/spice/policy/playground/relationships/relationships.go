@@ -1,5 +1,7 @@
 package relationships
 
+import "github.com/google/uuid"
+
 func GenerateRelationships() {
 	var (
 		platform = Platform("default")
@@ -45,6 +47,8 @@ func GenerateRelationships() {
 	groupMarketing := Group("marketing").MemberUser(katherine, ammar)
 	groupSales := Group("sales").MemberUser(shark, eric)
 	var _ = groupEveryone
+
+	Workspace(uuid.NewString()).CanDeleteBy()
 
 	// Organizations
 	companyOrganization := Organization("company").

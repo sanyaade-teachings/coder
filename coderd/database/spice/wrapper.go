@@ -8,8 +8,13 @@ import (
 
 func (s *SpiceDB) InsertWorkspace(ctx context.Context, arg database.InsertWorkspaceParams) (database.Workspace, error) {
 	s.Store.InTx(func(store database.Store) error {
-		//workspace, err := s.Store.InsertWorkspace(ctx, arg)
+		workspace, err := s.Store.InsertWorkspace(ctx, arg)
+		if err != nil {
+			return err
+		}
 
+		// Insert relationships
+		workspace.
 		s.WriteRelationship(ctx)
 		return nil
 	}, nil)
