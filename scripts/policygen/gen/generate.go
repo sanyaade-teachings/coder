@@ -2,6 +2,7 @@ package gen
 
 import (
 	_ "embed"
+	"fmt"
 	"go/format"
 	"sort"
 	"strings"
@@ -16,7 +17,15 @@ import (
 //go:embed relationships.tmpl
 var templateText string
 
-func Generate(schema string) (string, error) {
+type GenerateOptions struct {
+	Package string
+}
+
+func Generate(schema string, opts GenerateOptions) (string, error) {
+	if opts.Package == "" {
+		opts.Package = "policy"
+	}
+
 	var prefix string
 	compiled, err := compiler.Compile(compiler.InputSchema{
 		Source:       "policy.zed",
@@ -36,7 +45,7 @@ func Generate(schema string) (string, error) {
 	var output strings.Builder
 	_, _ = output.WriteString(`// Package relationships code generated. DO NOT EDIT.`)
 	_, _ = output.WriteString("\n")
-	_, _ = output.WriteString(`package relationships`)
+	_, _ = output.WriteString(fmt.Sprintf(`package %s`, opts.Package))
 	_, _ = output.WriteString("\n")
 	_, _ = output.WriteString(`import v1 "github.com/authzed/authzed-go/proto/authzed/api/v1"`)
 	_, _ = output.WriteString("\n")
@@ -86,13 +95,18 @@ func newDef(obj *core.NamespaceDefinition) objectDefinition {
 	}
 	rels := make([]objectDirectRelation, 0)
 
+	// Each relation is a "relation" line in the schema. Example:
+	// 	relation member: group#membership | user
 	for _, r := range obj.Relation {
 		if r.UsersetRewrite != nil {
 			// This is a permission.
 			continue
 		}
 
-		// multipleSubjects is relations
+		// Each "AllowedDirectRelations" is a "subject" on the right hand side
+		// of a relation. So in the example above, the subjects are:
+		//	- group#membership
+		//	- user
 		multipleSubjects := make([]objectDirectRelation, 0)
 		for _, d := range r.TypeInformation.AllowedDirectRelations {
 			optRel := ""
@@ -130,10 +144,21 @@ func newDef(obj *core.NamespaceDefinition) objectDefinition {
 			})
 		}
 
-		for i := range multipleSubjects {
-			// TODO: Check for any method name conflicts
-			multipleSubjects[i].FunctionName += capitalize(multipleSubjects[i].Subject.Object.ObjectType)
+		// If we have more than 1 subject, we need to suffix the name of the function with the
+		// object type. Otherwise, we have 2 functions with the same name.
+		//
+		// Example:
+		//	- group#member -- func MemberGroup
+		//	- user  	   -- func MemberUser
+		//
+		// If we only have 1 subject, we do not need the suffix.
+		// If someone could find a typesafe argument pattern with generics, that would be great.
+		if len(multipleSubjects) > 0 {
+			for i := range multipleSubjects {
+				multipleSubjects[i].FunctionName += capitalize(multipleSubjects[i].Subject.Object.ObjectType)
+			}
 		}
+
 		rels = append(rels, multipleSubjects...)
 	}
 	d.DirectRelations = rels

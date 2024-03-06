@@ -3,15 +3,15 @@ package policy
 
 import v1 "github.com/authzed/authzed-go/proto/authzed/api/v1"
 
-type ObjResource struct {
+type ObjOther struct {
 	Obj           *v1.ObjectReference
 	Relationships []v1.Relationship
 }
 
-func Resource(id string) *ObjResource {
-	o := &ObjResource{
+func Other(id string) *ObjOther {
+	o := &ObjOther{
 		Obj: &v1.ObjectReference{
-			ObjectType: "resource",
+			ObjectType: "other",
 			ObjectId:   id,
 		},
 		Relationships: []v1.Relationship{},
@@ -19,16 +19,36 @@ func Resource(id string) *ObjResource {
 	return o
 }
 
-func (obj *ObjResource) Type() string {
-	return "resource"
+func (obj *ObjOther) Type() string {
+	return "other"
 }
 
-func (obj *ObjResource) WriterUser(subs ...*ObjUser) *ObjResource {
+type ObjPerson struct {
+	Obj           *v1.ObjectReference
+	Relationships []v1.Relationship
+}
+
+func Person(id string) *ObjPerson {
+	o := &ObjPerson{
+		Obj: &v1.ObjectReference{
+			ObjectType: "person",
+			ObjectId:   id,
+		},
+		Relationships: []v1.Relationship{},
+	}
+	return o
+}
+
+func (obj *ObjPerson) Type() string {
+	return "person"
+}
+
+func (obj *ObjPerson) UserUser(subs ...*ObjUser) *ObjPerson {
 	for i := range subs {
 		sub := subs[i]
 		obj.Relationships = append(obj.Relationships, v1.Relationship{
 			Resource: obj.Obj,
-			Relation: "writer",
+			Relation: "user",
 			Subject: &v1.SubjectReference{
 				Object:           sub.Obj,
 				OptionalRelation: "",
@@ -39,12 +59,28 @@ func (obj *ObjResource) WriterUser(subs ...*ObjUser) *ObjResource {
 	return obj
 }
 
-func (obj *ObjResource) ViewerUser(subs ...*ObjUser) *ObjResource {
+func (obj *ObjPerson) UserOther(subs ...*ObjOther) *ObjPerson {
 	for i := range subs {
 		sub := subs[i]
 		obj.Relationships = append(obj.Relationships, v1.Relationship{
 			Resource: obj.Obj,
-			Relation: "viewer",
+			Relation: "user",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+func (obj *ObjPerson) TestUser(subs ...*ObjUser) *ObjPerson {
+	for i := range subs {
+		sub := subs[i]
+		obj.Relationships = append(obj.Relationships, v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "test",
 			Subject: &v1.SubjectReference{
 				Object:           sub.Obj,
 				OptionalRelation: "",

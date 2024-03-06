@@ -3,15 +3,15 @@ package policy
 
 import v1 "github.com/authzed/authzed-go/proto/authzed/api/v1"
 
-type ObjResource struct {
+type ObjGroup struct {
 	Obj           *v1.ObjectReference
 	Relationships []v1.Relationship
 }
 
-func Resource(id string) *ObjResource {
-	o := &ObjResource{
+func Group(id string) *ObjGroup {
+	o := &ObjGroup{
 		Obj: &v1.ObjectReference{
-			ObjectType: "resource",
+			ObjectType: "group",
 			ObjectId:   id,
 		},
 		Relationships: []v1.Relationship{},
@@ -19,16 +19,16 @@ func Resource(id string) *ObjResource {
 	return o
 }
 
-func (obj *ObjResource) Type() string {
-	return "resource"
+func (obj *ObjGroup) Type() string {
+	return "group"
 }
 
-func (obj *ObjResource) WriterUser(subs ...*ObjUser) *ObjResource {
+func (obj *ObjGroup) MemberUser(subs ...*ObjUser) *ObjGroup {
 	for i := range subs {
 		sub := subs[i]
 		obj.Relationships = append(obj.Relationships, v1.Relationship{
 			Resource: obj.Obj,
-			Relation: "writer",
+			Relation: "member",
 			Subject: &v1.SubjectReference{
 				Object:           sub.Obj,
 				OptionalRelation: "",
@@ -39,19 +39,35 @@ func (obj *ObjResource) WriterUser(subs ...*ObjUser) *ObjResource {
 	return obj
 }
 
-func (obj *ObjResource) ViewerUser(subs ...*ObjUser) *ObjResource {
+func (obj *ObjGroup) MemberGroup(subs ...*ObjGroup) *ObjGroup {
 	for i := range subs {
 		sub := subs[i]
 		obj.Relationships = append(obj.Relationships, v1.Relationship{
 			Resource: obj.Obj,
-			Relation: "viewer",
+			Relation: "member",
 			Subject: &v1.SubjectReference{
 				Object:           sub.Obj,
-				OptionalRelation: "",
+				OptionalRelation: "member",
 			},
 			OptionalCaveat: nil,
 		})
 	}
+	return obj
+}
+
+func (obj *ObjGroup) MemberWildcard() *ObjGroup {
+	obj.Relationships = append(obj.Relationships, v1.Relationship{
+		Resource: obj.Obj,
+		Relation: "member",
+		Subject: &v1.SubjectReference{
+			Object: &v1.ObjectReference{
+				ObjectType: "user",
+				ObjectId:   "*",
+			},
+			OptionalRelation: "",
+		},
+		OptionalCaveat: nil,
+	})
 	return obj
 }
 

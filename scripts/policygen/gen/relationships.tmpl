@@ -19,10 +19,6 @@ func (obj *Obj{{ capitalize $outerName }}) Type() string {
 	return "{{ .Name }}"
 }
 
-func (obj *Obj{{ capitalize $outerName }}) Object() *v1.ObjectReference {
-	return obj.Obj
-}
-
 {{ range $index, $element := .DirectRelations }}
 {{/* Wildcard '*' is a keyword for spicedb to represent 'all objects of this type' */}}
 {{ if eq $element.Subject.Object.ObjectId "*" }}

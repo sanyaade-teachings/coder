@@ -1,0 +1,10 @@
+definition user {}
+definition other {}
+
+/**
+ * resource is an example resource.
+ */
+definition person {
+    relation user: user | other
+    relation test: user
+}
