@@ -7,4 +7,6 @@ definition other {}
 definition person {
     relation user: user | other
     relation test: user
+
+    permission read = user
 }

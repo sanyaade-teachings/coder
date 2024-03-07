@@ -63,15 +63,15 @@ func (b *Builder) CheckPermission(subj AuthzedObject, permission string, on Auth
 	return b
 }
 
-type ObjGroup struct {
+type ObjFile struct {
 	Obj     *v1.ObjectReference
 	Builder *Builder
 }
 
-func (b *Builder) Group(id fmt.Stringer) *ObjGroup {
-	o := &ObjGroup{
+func (b *Builder) File(id fmt.Stringer) *ObjFile {
+	o := &ObjFile{
 		Obj: &v1.ObjectReference{
-			ObjectType: "group",
+			ObjectType: "file",
 			ObjectId:   id.String(),
 		},
 		Builder: b,
@@ -79,18 +79,18 @@ func (b *Builder) Group(id fmt.Stringer) *ObjGroup {
 	return o
 }
 
-func (obj *ObjGroup) Object() *v1.ObjectReference {
+func (obj *ObjFile) Object() *v1.ObjectReference {
 	return obj.Obj
 }
 
-// MemberUser group.zed:4
-// Relationship: group:<id>#member@user:<id>
-func (obj *ObjGroup) MemberUser(subs ...*ObjUser) *ObjGroup {
+// Folder optionalrelation.zed:10
+// Relationship: file:<id>#folder@folder:<id>
+func (obj *ObjFile) Folder(subs ...*ObjFolder) *ObjFile {
 	for i := range subs {
 		sub := subs[i]
 		obj.Builder.AddRelationship(v1.Relationship{
 			Resource: obj.Obj,
-			Relation: "member",
+			Relation: "folder",
 			Subject: &v1.SubjectReference{
 				Object:           sub.Obj,
 				OptionalRelation: "",
@@ -101,17 +101,48 @@ func (obj *ObjGroup) MemberUser(subs ...*ObjUser) *ObjGroup {
 	return obj
 }
 
-// MemberGroup group.zed:4
-// Relationship: group:<id>#member@group:<id>#member
-func (obj *ObjGroup) MemberGroup(subs ...*ObjGroup) *ObjGroup {
+// CanReadBy optionalrelation.zed:12
+// Object: file:<id>
+// Schema: permission read = folder->read
+func (obj *ObjFile) CanReadBy(subs ...AuthzedObject) *ObjFile {
+	for i := range subs {
+		sub := subs[i]
+		obj.Builder.CheckPermission(sub, "read", obj)
+	}
+	return obj
+}
+
+type ObjFolder struct {
+	Obj     *v1.ObjectReference
+	Builder *Builder
+}
+
+func (b *Builder) Folder(id fmt.Stringer) *ObjFolder {
+	o := &ObjFolder{
+		Obj: &v1.ObjectReference{
+			ObjectType: "folder",
+			ObjectId:   id.String(),
+		},
+		Builder: b,
+	}
+	return o
+}
+
+func (obj *ObjFolder) Object() *v1.ObjectReference {
+	return obj.Obj
+}
+
+// Owner optionalrelation.zed:4
+// Relationship: folder:<id>#owner@user:<id>
+func (obj *ObjFolder) Owner(subs ...*ObjUser) *ObjFolder {
 	for i := range subs {
 		sub := subs[i]
 		obj.Builder.AddRelationship(v1.Relationship{
 			Resource: obj.Obj,
-			Relation: "member",
+			Relation: "owner",
 			Subject: &v1.SubjectReference{
 				Object:           sub.Obj,
-				OptionalRelation: "member",
+				OptionalRelation: "",
 			},
 			OptionalCaveat: nil,
 		})
@@ -119,31 +150,13 @@ func (obj *ObjGroup) MemberGroup(subs ...*ObjGroup) *ObjGroup {
 	return obj
 }
 
-// MemberWildcard group.zed:4
-// Relationship: group:<id>#member@user:*
-func (obj *ObjGroup) MemberWildcard() *ObjGroup {
-	obj.Builder.AddRelationship(v1.Relationship{
-		Resource: obj.Obj,
-		Relation: "member",
-		Subject: &v1.SubjectReference{
-			Object: &v1.ObjectReference{
-				ObjectType: "user",
-				ObjectId:   "*",
-			},
-			OptionalRelation: "",
-		},
-		OptionalCaveat: nil,
-	})
-	return obj
-}
-
-// CanMembershipBy group.zed:6
-// Object: group:<id>
-// Schema: permission membership = member
-func (obj *ObjGroup) CanMembershipBy(subs ...AuthzedObject) *ObjGroup {
+// CanReadBy optionalrelation.zed:6
+// Object: folder:<id>
+// Schema: permission read = owner
+func (obj *ObjFolder) CanReadBy(subs ...AuthzedObject) *ObjFolder {
 	for i := range subs {
 		sub := subs[i]
-		obj.Builder.CheckPermission(sub, "membership", obj)
+		obj.Builder.CheckPermission(sub, "read", obj)
 	}
 	return obj
 }

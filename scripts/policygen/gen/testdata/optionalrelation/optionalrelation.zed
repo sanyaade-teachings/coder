@@ -1,0 +1,14 @@
+definition user{}
+
+definition folder {
+    relation owner: user
+
+    permission read = owner
+}
+
+definition file {
+    relation folder: folder
+
+    permission read = folder->read
+}
+

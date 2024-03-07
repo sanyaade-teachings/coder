@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"fmt"
 	"go/format"
+	"regexp"
 	"sort"
 	"strings"
 	"text/template"
@@ -11,14 +12,20 @@ import (
 	v1 "github.com/authzed/authzed-go/proto/authzed/api/v1"
 	core "github.com/authzed/spicedb/pkg/proto/core/v1"
 	"github.com/authzed/spicedb/pkg/schemadsl/compiler"
+	"github.com/authzed/spicedb/pkg/schemadsl/generator"
+	"github.com/authzed/spicedb/pkg/tuple"
 	"golang.org/x/xerrors"
 )
 
-//go:embed relationships.tmpl
+//go:embed relationships.go.tmpl
 var templateText string
 
+//go:embed header.go.tmpl
+var templateHeader string
+
 type GenerateOptions struct {
-	Package string
+	Package  string
+	Filename string
 }
 
 func Generate(schema string, opts GenerateOptions) (string, error) {
@@ -37,22 +44,40 @@ func Generate(schema string, opts GenerateOptions) (string, error) {
 
 	tpl, err := template.New("relationships.tmpl").Funcs(template.FuncMap{
 		"capitalize": capitalize,
+		"comment":    comment,
 	}).Parse(templateText)
 	if err != nil {
 		return "", xerrors.Errorf("parse template: %w", err)
 	}
 
-	var output strings.Builder
-	_, _ = output.WriteString(`// Package relationships code generated. DO NOT EDIT.`)
-	_, _ = output.WriteString("\n")
-	_, _ = output.WriteString(fmt.Sprintf(`package %s`, opts.Package))
-	_, _ = output.WriteString("\n")
-	_, _ = output.WriteString(`import (
-	v1 "github.com/authzed/authzed-go/proto/authzed/api/v1"
+	header, err := template.New("header.tmpl").Parse(templateHeader)
+	if err != nil {
+		return "", xerrors.Errorf("parse header template: %w", err)
+	}
 
-	"fmt"
-)`)
-	_, _ = output.WriteString("\n")
+	// This is specific to coder. For ease of use of the site wide "platform", having
+	// a method to reference the same platform is useful. If the platform object is not
+	// present, then we will omit this.
+	includeSitePlatform := false
+	for _, obj := range compiled.ObjectDefinitions {
+		if obj.Name == "platform" {
+			includeSitePlatform = true
+			break
+		}
+	}
+
+	var output strings.Builder
+	// Write the file header first
+	err = header.Execute(&output, map[string]interface{}{
+		"Package":             opts.Package,
+		"IncludeSitePlatform": includeSitePlatform,
+	})
+	if err != nil {
+		return "", xerrors.Errorf("execute header template: %w", err)
+	}
+
+	// If you do not write this, there is no line break between them.
+	output.WriteString("\n")
 
 	// sort order for consistency
 	sort.Slice(compiled.ObjectDefinitions, func(i, j int) bool {
@@ -65,6 +90,7 @@ func Generate(schema string, opts GenerateOptions) (string, error) {
 
 	for _, obj := range compiled.ObjectDefinitions {
 		d := newDef(obj)
+		d.Filename = opts.Filename
 		err := tpl.Execute(&output, d)
 		if err != nil {
 			return "", xerrors.Errorf("[%q] execute template: %w", obj.Name, err)
@@ -74,7 +100,8 @@ func Generate(schema string, opts GenerateOptions) (string, error) {
 
 	formatted, err := format.Source([]byte(output.String()))
 	if err != nil {
-		return "", xerrors.Errorf("format source: %w", err)
+		// Return the failed output for debugging.
+		return output.String(), xerrors.Errorf("format source: %w", err)
 	}
 	return string(formatted), nil
 }
@@ -84,26 +111,75 @@ type objectDefinition struct {
 	// The core type
 	*core.NamespaceDefinition
 
+	Filename        string
 	DirectRelations []objectDirectRelation
+	Permissions     []objectPermission
 }
 
 type objectDirectRelation struct {
+	LinePos      string
+	Comment      string
 	RelationName string
 	FunctionName string
 	Subject      v1.SubjectReference
 }
+
+type objectPermission struct {
+	LinePos      string
+	Comment      string
+	Permission   string
+	FunctionName string
+}
+
+var permissionSchema = regexp.MustCompile(`^[^{]*{\s*(.*)\s}$`)
 
 func newDef(obj *core.NamespaceDefinition) objectDefinition {
 	d := objectDefinition{
 		NamespaceDefinition: obj,
 	}
 	rels := make([]objectDirectRelation, 0)
+	perms := make([]objectPermission, 0)
 
-	// Each relation is a "relation" line in the schema. Example:
-	// 	relation member: group#membership | user
+	objectReference := &v1.ObjectReference{
+		ObjectType: obj.Name,
+		ObjectId:   "<id>",
+	}
+
+	// Each relation is a "relation" or "permission" line in the schema. Example:
+	// - relation member: group#membership | user
+	// - permission membership = member
 	for _, r := range obj.Relation {
+		linePos := fmt.Sprintf("%d", r.SourcePosition.ZeroIndexedLineNumber+1)
+		// A UsersetRewrite is a permission. In spicedb, permissions are just
+		// dynamically created relations.
 		if r.UsersetRewrite != nil {
-			// This is a permission.
+			comment := fmt.Sprintf("Object: %s", tuple.StringObjectRef(objectReference))
+			// The UsersetRewrite is an expression shown as an AST here.
+			// The code to parse the AST is all in the `/internal` pkg, and
+			// writing our own AST traversal is not worth it just to place
+			// a helpful comment.
+			//
+			// Instead, we use the 'GenerateSource' to effectively generate the
+			// schema block. With a bit of regex, we can extract what we want.
+			schema, _, _ := generator.GenerateSource(&core.NamespaceDefinition{
+				Name:           obj.Name,
+				Relation:       []*core.Relation{r},
+				Metadata:       obj.Metadata,
+				SourcePosition: obj.SourcePosition,
+			})
+			matches := permissionSchema.FindStringSubmatch(schema)
+			if len(matches) >= 2 {
+				comment += "\nSchema: " + matches[1]
+			}
+
+			// For our case, we only care about the permissions name. The actual
+			// dynamic mapping is not needed for the policygen.
+			perms = append(perms, objectPermission{
+				LinePos:      linePos,
+				Comment:      strings.TrimSpace(comment),
+				Permission:   r.Name,
+				FunctionName: capitalize(r.Name),
+			})
 			continue
 		}
 
@@ -119,32 +195,35 @@ func newDef(obj *core.NamespaceDefinition) objectDefinition {
 				optRel = d.GetRelation()
 			}
 
-			if d.GetPublicWildcard() != nil {
-				multipleSubjects = append(multipleSubjects, objectDirectRelation{
-					RelationName: r.Name,
-					FunctionName: r.Name,
-					Subject: v1.SubjectReference{
-						Object: &v1.ObjectReference{
-							ObjectType: d.Namespace,
-							ObjectId:   "*",
-						},
-						OptionalRelation: optRel,
-					},
-				})
-				continue
+			subj := v1.SubjectReference{
+				Object: &v1.ObjectReference{
+					ObjectType: d.Namespace,
+					// This ObjectID will be overwritten, so just use a placeholder.
+					ObjectId: "<id>",
+				},
+				OptionalRelation: optRel,
 			}
 
+			if d.GetPublicWildcard() != nil {
+				subj.Object.ObjectId = "*"
+			}
+
+			// Generate a comment above the function that is the string representation
+			// of the relationship that the function will create.
+			// The format is:
+			//	<obj_typ>:<obj_id>#<relation>@<subj_typ>:<subj_id>
+			comment, _ := tuple.StringRelationship(&v1.Relationship{
+				Resource:       objectReference,
+				Relation:       r.Name,
+				Subject:        &subj,
+				OptionalCaveat: nil,
+			})
 			multipleSubjects = append(multipleSubjects, objectDirectRelation{
+				LinePos:      linePos,
+				Comment:      fmt.Sprintf("Relationship: %s", comment),
 				RelationName: r.Name,
 				FunctionName: r.Name,
-				Subject: v1.SubjectReference{
-					Object: &v1.ObjectReference{
-						ObjectType: d.Namespace,
-						// This ObjectID will be overwritten, so just use a placeholder.
-						ObjectId: "<id>",
-					},
-					OptionalRelation: optRel,
-				},
+				Subject:      subj,
 			})
 		}
 
@@ -166,9 +245,14 @@ func newDef(obj *core.NamespaceDefinition) objectDefinition {
 		rels = append(rels, multipleSubjects...)
 	}
 	d.DirectRelations = rels
+	d.Permissions = perms
 	return d
 }
 
 func capitalize(name string) string {
 	return strings.ToUpper(string(name[0])) + name[1:]
+}
+
+func comment(body string) string {
+	return "// " + strings.Join(strings.Split(body, "\n"), "\n// ")
 }

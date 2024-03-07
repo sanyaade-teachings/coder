@@ -15,7 +15,8 @@ func main() {
 	flag.Parse()
 
 	out, err := gen.Generate(policy.Schema, gen.GenerateOptions{
-		Package: "policy",
+		Filename: "schema.zed",
+		Package:  "policy",
 	})
 	if err != nil {
 		fmt.Fprint(os.Stderr, err.Error())

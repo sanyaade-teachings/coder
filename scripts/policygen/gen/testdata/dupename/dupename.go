@@ -1,52 +1,114 @@
-// Package relationships code generated. DO NOT EDIT.
+// Package policy code generated. DO NOT EDIT.
 package policy
 
-import v1 "github.com/authzed/authzed-go/proto/authzed/api/v1"
+import (
+	"fmt"
 
-type ObjOther struct {
-	Obj           *v1.ObjectReference
-	Relationships []v1.Relationship
+	v1 "github.com/authzed/authzed-go/proto/authzed/api/v1"
+)
+
+// String is used to use string literals instead of uuids.
+type String string
+
+func (s String) String() string {
+	return string(s)
 }
 
-func Other(id string) *ObjOther {
+type AuthzedObject interface {
+	Object() *v1.ObjectReference
+}
+
+// PermissionCheck can be read as:
+// Can 'subject' do 'permission' on 'object'?
+type PermissionCheck struct {
+	// Subject has an optional
+	Subject    *v1.SubjectReference
+	Permission string
+	Obj        *v1.ObjectReference
+}
+
+// Builder contains all the saved relationships and permission checks during
+// function calls that extend from it.
+// This means you can use the builder to create a set of relationships to add
+// to the graph and/or a set of permission checks to validate.
+type Builder struct {
+	// Relationships are new graph connections to be formed.
+	// This will expand the capability/permissions.
+	Relationships []v1.Relationship
+	// PermissionChecks are the set of capabilities required.
+	PermissionChecks []PermissionCheck
+}
+
+func New() *Builder {
+	return &Builder{
+		Relationships:    make([]v1.Relationship, 0),
+		PermissionChecks: make([]PermissionCheck, 0),
+	}
+}
+
+func (b *Builder) AddRelationship(r v1.Relationship) *Builder {
+	b.Relationships = append(b.Relationships, r)
+	return b
+}
+
+func (b *Builder) CheckPermission(subj AuthzedObject, permission string, on AuthzedObject) *Builder {
+	b.PermissionChecks = append(b.PermissionChecks, PermissionCheck{
+		Subject: &v1.SubjectReference{
+			Object:           subj.Object(),
+			OptionalRelation: "",
+		},
+		Permission: permission,
+		Obj:        on.Object(),
+	})
+	return b
+}
+
+type ObjOther struct {
+	Obj     *v1.ObjectReference
+	Builder *Builder
+}
+
+func (b *Builder) Other(id fmt.Stringer) *ObjOther {
 	o := &ObjOther{
 		Obj: &v1.ObjectReference{
 			ObjectType: "other",
-			ObjectId:   id,
+			ObjectId:   id.String(),
 		},
-		Relationships: []v1.Relationship{},
+		Builder: b,
 	}
 	return o
 }
 
-func (obj *ObjOther) Type() string {
-	return "other"
+func (obj *ObjOther) Object() *v1.ObjectReference {
+	return obj.Obj
 }
 
 type ObjPerson struct {
-	Obj           *v1.ObjectReference
-	Relationships []v1.Relationship
+	Obj     *v1.ObjectReference
+	Builder *Builder
 }
 
-func Person(id string) *ObjPerson {
+func (b *Builder) Person(id fmt.Stringer) *ObjPerson {
 	o := &ObjPerson{
 		Obj: &v1.ObjectReference{
 			ObjectType: "person",
-			ObjectId:   id,
+			ObjectId:   id.String(),
 		},
-		Relationships: []v1.Relationship{},
+		Builder: b,
 	}
 	return o
 }
 
-func (obj *ObjPerson) Type() string {
-	return "person"
+func (obj *ObjPerson) Object() *v1.ObjectReference {
+	return obj.Obj
 }
 
+// UserUser dupename.zed:8
+// Relationship: person:<id>#user@user:<id>
 func (obj *ObjPerson) UserUser(subs ...*ObjUser) *ObjPerson {
 	for i := range subs {
 		sub := subs[i]
-		obj.Relationships = append(obj.Relationships, v1.Relationship{
+		obj.Builder.AddRelationship(v1.Relationship{
 			Resource: obj.Obj,
 			Relation: "user",
 			Subject: &v1.SubjectReference{
@@ -59,10 +121,12 @@ func (obj *ObjPerson) UserUser(subs ...*ObjUser) *ObjPerson {
 	return obj
 }
 
+// UserOther dupename.zed:8
+// Relationship: person:<id>#user@other:<id>
 func (obj *ObjPerson) UserOther(subs ...*ObjOther) *ObjPerson {
 	for i := range subs {
 		sub := subs[i]
-		obj.Relationships = append(obj.Relationships, v1.Relationship{
+		obj.Builder.AddRelationship(v1.Relationship{
 			Resource: obj.Obj,
 			Relation: "user",
 			Subject: &v1.SubjectReference{
@@ -75,10 +139,12 @@ func (obj *ObjPerson) UserOther(subs ...*ObjOther) *ObjPerson {
 	return obj
 }
 
-func (obj *ObjPerson) TestUser(subs ...*ObjUser) *ObjPerson {
+// Test dupename.zed:9
+// Relationship: person:<id>#test@user:<id>
+func (obj *ObjPerson) Test(subs ...*ObjUser) *ObjPerson {
 	for i := range subs {
 		sub := subs[i]
-		obj.Relationships = append(obj.Relationships, v1.Relationship{
+		obj.Builder.AddRelationship(v1.Relationship{
 			Resource: obj.Obj,
 			Relation: "test",
 			Subject: &v1.SubjectReference{
@@ -91,22 +157,33 @@ func (obj *ObjPerson) TestUser(subs ...*ObjUser) *ObjPerson {
 	return obj
 }
 
-type ObjUser struct {
-	Obj           *v1.ObjectReference
-	Relationships []v1.Relationship
+// CanReadBy dupename.zed:11
+// Object: person:<id>
+// Schema: permission read = user
+func (obj *ObjPerson) CanReadBy(subs ...AuthzedObject) *ObjPerson {
+	for i := range subs {
+		sub := subs[i]
+		obj.Builder.CheckPermission(sub, "read", obj)
+	}
+	return obj
 }
 
-func User(id string) *ObjUser {
+type ObjUser struct {
+	Obj     *v1.ObjectReference
+	Builder *Builder
+}
+
+func (b *Builder) User(id fmt.Stringer) *ObjUser {
 	o := &ObjUser{
 		Obj: &v1.ObjectReference{
 			ObjectType: "user",
-			ObjectId:   id,
+			ObjectId:   id.String(),
 		},
-		Relationships: []v1.Relationship{},
+		Builder: b,
 	}
 	return o
 }
 
-func (obj *ObjUser) Type() string {
-	return "user"
+func (obj *ObjUser) Object() *v1.ObjectReference {
+	return obj.Obj
 }

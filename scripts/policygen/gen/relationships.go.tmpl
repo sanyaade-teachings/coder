@@ -1,29 +1,32 @@
 type Obj{{ capitalize .Name }} struct {
 	Obj *v1.ObjectReference
-	Relationships []v1.Relationship
+	Builder *Builder
 }
 
-func {{ capitalize .Name }}(id fmt.Stringer) *Obj{{ capitalize .Name }} {
+func (b *Builder){{ capitalize .Name }}(id fmt.Stringer) *Obj{{ capitalize .Name }} {
 	o := &Obj{{ capitalize .Name }}{
 		Obj: &v1.ObjectReference{
 			ObjectType: "{{ .Name }}",
 			ObjectId:   id.String(),
 		},
-		Relationships: []v1.Relationship{},
+		Builder: b,
 	}
 	return o
 }
 
+{{ $filename := .Filename }}
 {{ $outerName := .Name }}
-func (obj *Obj{{ capitalize $outerName }}) Type() string {
-	return "{{ .Name }}"
+func (obj *Obj{{ capitalize $outerName }}) Object() *v1.ObjectReference {
+	return obj.Obj
 }
 
 {{ range $index, $element := .DirectRelations }}
 {{/* Wildcard '*' is a keyword for spicedb to represent 'all objects of this type' */}}
 {{ if eq $element.Subject.Object.ObjectId "*" }}
+// {{ capitalize $element.RelationName }}Wildcard {{ $filename }}:{{ .LinePos }}
+{{ comment $element.Comment }}
 func (obj *Obj{{ capitalize $outerName }}) {{ capitalize $element.RelationName }}Wildcard() *Obj{{ capitalize $outerName }}{
-	obj.Relationships = append(obj.Relationships, v1.Relationship{
+	obj.Builder.AddRelationship(v1.Relationship{
 		Resource: obj.Obj,
 		Relation: "{{ $element.RelationName }}",
 		Subject: &v1.SubjectReference{
@@ -39,11 +42,12 @@ func (obj *Obj{{ capitalize $outerName }}) {{ capitalize $element.RelationName }
 }
 
 {{ else }}
-
+// {{ capitalize $element.FunctionName }} {{ $filename }}:{{ .LinePos }}
+{{ comment $element.Comment }}
 func (obj *Obj{{ capitalize $outerName }}) {{ capitalize $element.FunctionName }}(subs ...*Obj{{ capitalize $element.Subject.Object.ObjectType }}) *Obj{{ capitalize $outerName }}{
 	for i := range subs {
 		sub := subs[i]
-		obj.Relationships = append(obj.Relationships, v1.Relationship{
+		obj.Builder.AddRelationship(v1.Relationship{
 			Resource: obj.Obj,
 			Relation: "{{ $element.RelationName }}",
 			Subject: &v1.SubjectReference{
@@ -56,4 +60,22 @@ func (obj *Obj{{ capitalize $outerName }}) {{ capitalize $element.FunctionName }
 	return obj
 }
 {{ end }}
+{{ end }}
+
+
+{{ range $index, $element := .Permissions }}
+{{/*
+	The subject is almost always going to be an *ObjUser, but we should account for non-user subjects.
+	If we end up only using users here, we should replace 'AuthzedObject' with '*ObjUser' in the function signature for
+	type safety.
+*/}}
+// Can{{ capitalize $element.FunctionName }}By {{ $filename }}:{{ .LinePos }}
+{{ comment $element.Comment }}
+func (obj *Obj{{ capitalize $outerName }}) Can{{ capitalize $element.FunctionName }}By(subs ...AuthzedObject) *Obj{{ capitalize $outerName }}{
+	for i := range subs {
+		sub := subs[i]
+		obj.Builder.CheckPermission(sub, "{{ $element.Permission }}", obj)
+	}
+	return obj
+}
 {{ end }}

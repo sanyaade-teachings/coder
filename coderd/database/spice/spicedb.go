@@ -15,10 +15,13 @@ import (
 
 	"cdr.dev/slog"
 	"github.com/coder/coder/v2/coderd/database"
+	"github.com/coder/coder/v2/coderd/database/spice/debug"
 	"github.com/coder/coder/v2/coderd/database/spice/policy"
 )
 
-const wrapname = "spicedb.querier"
+const (
+	wrapname = "spicedb.querier"
+)
 
 type SpiceDB struct {
 	// TODO: Do not embed anonymously. This is just a lazy way to skip
@@ -95,6 +98,13 @@ func (s *SpiceDB) Debugging(set bool) {
 
 func (s *SpiceDB) Close() {
 	s.cancel()
+}
+
+func merge(a []v1.Relationship, rest ...[]v1.Relationship) []v1.Relationship {
+	for i := range rest {
+		a = append(a, rest[i]...)
+	}
+	return a
 }
 
 // WithRelationsExec allows exec functions that do not return a return object.
@@ -215,6 +225,7 @@ func (s *SpiceDB) Check(ctx context.Context) (bool, error) {
 	}
 
 	// A permission can be written like:
+	//	"<object_type:object_id>#<permission>@<subject_type:subject_id>"
 	//	"workspace:dogfood#view@user:root"
 	// And parsed with:
 	//	tup := tuple.Parse(perm)
@@ -259,8 +270,8 @@ func debugSpiceDBRPC(ctx context.Context, logger slog.Logger) (opt grpc.CallOpti
 			logger.Debug(ctx, "debug rpc: no trace found for the check")
 			return
 		}
-		tp := NewTreePrinter()
-		DisplayCheckTrace(debugInfo.Check, tp, false)
+		tp := debug.NewTreePrinter()
+		debug.DisplayCheckTrace(debugInfo.Check, tp, false)
 		logger.Debug(ctx, tp.String())
 	}
 

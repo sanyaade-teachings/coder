@@ -44,6 +44,11 @@ definition organization {
 	// TODO: Can we enforce this as a required relation if they have another?
 	//		 Something like (group#membership | user) & member
 	relation member: group#membership | user
+	// default_permissios is a shortcut to assign the default permissions to a regular user.
+	// We do not use the 'member' primitive role here, as we want to be able to create
+	// unique permissions for edge cases (eg an auditor role)
+	relation default_permissios: group#membership | user
+
 
 	/*******************
 	 * Workspace Roles *
@@ -81,7 +86,7 @@ definition organization {
 	 * Org Permissions *
 	 *******************/
 	// All the ways you can be a member of an organization.
-	permission memership = member + 
+	permission membership = member + default_permissios +
 		workspace_viewer + workspace_creator + workspace_deletor + workspace_editor +
 		template_viewer + template_creator + template_deletor + template_editor + template_permission_manager + template_insights_viewer
 
@@ -96,7 +101,7 @@ definition organization {
 	permission delete_workspaces = platform->super_admin + workspace_deletor
 	// create_workspace is on the organization level object. A workspace that is created is owned by the organization
 	// and the application should setup the correct permissions/relations for the new resource.
-	permission create_workspace = platform->super_admin + workspace_creator
+	permission create_workspace = platform->super_admin + workspace_creator + default_permissios
 
 
 	/************************

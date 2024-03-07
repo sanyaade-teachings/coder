@@ -60,6 +60,9 @@ func TestGeneration(t *testing.T, params TestGenerationParams) {
 
 			dir := filepath.Join(".", "testdata", f.Name())
 			output, err := params.Generate("./" + dir)
+			if err != nil {
+				t.Log(output)
+			}
 			require.NoErrorf(t, err, "generate %q", dir)
 
 			goldenFile, err := FindFileWithExtension(dir, params.GoldenExtension)

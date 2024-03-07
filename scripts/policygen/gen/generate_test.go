@@ -31,7 +31,9 @@ func TestZedPolicyGen(t *testing.T) {
 			if err != nil {
 				return "", err
 			}
-			return gen.Generate(string(schema), gen.GenerateOptions{})
+			return gen.Generate(string(schema), gen.GenerateOptions{
+				Filename: src,
+			})
 		},
 		TestDataDir:     dir,
 		GoldenExtension: "go",
