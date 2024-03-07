@@ -3,6 +3,8 @@ package spice
 import (
 	"context"
 
+	"github.com/google/uuid"
+
 	"github.com/coder/coder/v2/coderd/database"
 	"github.com/coder/coder/v2/coderd/database/spice/policy"
 	"github.com/coder/coder/v2/coderd/rbac"
@@ -76,7 +78,12 @@ func (s *SpiceDB) InsertOrganizationMember(ctx context.Context, arg database.Ins
 	return WithRelations(ctx, s, builder.Relationships, s.Store.InsertOrganizationMember, arg)
 }
 
-//func (s *SpiceDB) GetWorkspaceByID(ctx context.Context, id uuid.UUID) (database.Workspace, error) {
-//	wrk := policy.Workspace(id)
-//	return database.Workspace{}, nil
-//}
+func (s *SpiceDB) GetWorkspaceByID(ctx context.Context, id uuid.UUID) (database.Workspace, error) {
+	wrk := policy.New().Workspace(id)
+	err := s.Check(wrk.CanView(ctx))
+	if err != nil {
+		return database.Workspace{}, nil
+	}
+
+	return database.Workspace{}, nil
+}

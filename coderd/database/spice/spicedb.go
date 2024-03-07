@@ -23,6 +23,7 @@ import (
 
 const (
 	wrapname = "spicedb.querier"
+	god      = "god"
 )
 
 type spiceActorKey struct{}
@@ -34,6 +35,17 @@ var NoActorError = xerrors.Errorf("no authorization actor in context: %w", sql.E
 func ActorFromContext(ctx context.Context) (*v1.SubjectReference, bool) {
 	a, ok := ctx.Value(spiceActorKey{}).(*v1.SubjectReference)
 	return a, ok
+}
+
+// AsGod is a hack to get around bootstrapping. Since we need perms to create the
+// first users. Idk if we should keep this.
+func AsGod(ctx context.Context) context.Context {
+	return context.WithValue(ctx, spiceActorKey{}, &v1.SubjectReference{
+		Object: &v1.ObjectReference{
+			ObjectType: god,
+			ObjectId:   god,
+		},
+	})
 }
 
 func AsUser(ctx context.Context, userID uuid.UUID) context.Context {
@@ -232,6 +244,10 @@ func (s *SpiceDB) Check(ctx context.Context, permission string, resource *v1.Obj
 	actor, ok := ActorFromContext(ctx)
 	if !ok {
 		return NoActorError
+	}
+
+	if actor.Object.ObjectType == god && actor.Object.ObjectId == "god" {
+		return nil
 	}
 
 	opts := []grpc.CallOption{}
