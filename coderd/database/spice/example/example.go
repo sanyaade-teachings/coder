@@ -25,7 +25,7 @@ import (
 	"github.com/authzed/spicedb/pkg/cmd/server"
 	"github.com/authzed/spicedb/pkg/cmd/util"
 
-	"github.com/coder/coder/v2/coderd/database/spice"
+	"github.com/coder/coder/v2/coderd/database/spice/debug"
 	"github.com/coder/coder/v2/coderd/database/spice/policy"
 	"github.com/coder/coder/v2/coderd/database/spice/policy/playground/relationships"
 )
@@ -100,8 +100,8 @@ func RunExample(ctx context.Context) error {
 			if debugInfo.Check == nil {
 				log.Println("No trace found for the check")
 			} else {
-				tp := spice.NewTreePrinter()
-				spice.DisplayCheckTrace(debugInfo.Check, tp, false)
+				tp := debug.NewTreePrinter()
+				debug.DisplayCheckTrace(debugInfo.Check, tp, false)
 				tp.Print()
 			}
 		}

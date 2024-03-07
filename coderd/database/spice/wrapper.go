@@ -63,8 +63,9 @@ func (s *SpiceDB) InsertOrganizationMember(ctx context.Context, arg database.Ins
 	builder := policy.New()
 	user := builder.User(arg.UserID)
 	org := builder.Organization(arg.OrganizationID).
+		MemberUser(user).
 		// TODO: This is assuming a user is only an org member
-		Default_permissiosUser(user).
+		Default_permissionsUser(user).
 		// We add this because a migration creates the original default org.
 		// If a user is added to this org, we want to ensure the org is tracked in
 		// the authz graph.
@@ -82,7 +83,7 @@ func (s *SpiceDB) GetWorkspaceByID(ctx context.Context, id uuid.UUID) (database.
 	wrk := policy.New().Workspace(id)
 	err := s.Check(wrk.CanView(ctx))
 	if err != nil {
-		return database.Workspace{}, nil
+		return database.Workspace{}, err
 	}
 
 	return database.Workspace{}, nil

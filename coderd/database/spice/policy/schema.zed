@@ -27,7 +27,7 @@ definition platform {
 	// Avoid calling this relation an "owner" though as we use that term for ownership
 	// of specific resources.
 	relation administrator: user
-	relation user_admin: user | group#member
+	relation user_admin: user | group#membership
 
 	// platform roles should only be used to escalate permissions above the "member" level.
 	// All platform members are just "user". So add these with caution.
@@ -50,7 +50,7 @@ definition organization {
 	// default_permissios is a shortcut to assign the default permissions to a regular user.
 	// We do not use the 'member' primitive role here, as we want to be able to create
 	// unique permissions for edge cases (eg an auditor role)
-	relation default_permissios: group#membership | user
+	relation default_permissions: group#membership | user
 
 
 	/*******************
@@ -89,7 +89,7 @@ definition organization {
 	 * Org Permissions *
 	 *******************/
 	// All the ways you can be a member of an organization.
-	permission membership = member + default_permissios +
+	permission membership = member + default_permissions +
 		workspace_viewer + workspace_creator + workspace_deletor + workspace_editor +
 		template_viewer + template_creator + template_deletor + template_editor + template_permission_manager + template_insights_viewer
 	permission create_org_member = platform -> create_user
@@ -105,7 +105,7 @@ definition organization {
 	permission delete_workspaces = platform->super_admin + workspace_deletor
 	// create_workspace is on the organization level object. A workspace that is created is owned by the organization
 	// and the application should setup the correct permissions/relations for the new resource.
-	permission create_workspace = platform->super_admin + workspace_creator + default_permissios
+	permission create_workspace = platform->super_admin + workspace_creator + default_permissions
 
 
 	/************************
@@ -138,7 +138,7 @@ definition workspace {
 	relation selector: group#membership | user
 	relation connector: group#membership | user
 
-	// for_user is a quick way to assign the permissions associated with "owning" 
+	// for_user is a quick way to assign the permissions associated with "owning"
 	// a workspace as a user. Assign this instead of the individual permissions, as it enables
 	// easier dynamic rewrites of the permissions later.
 	relation for_user: group#membership | user
@@ -153,7 +153,7 @@ definition workspace {
 		// Some perms require view as well
 		edit + delete + select_template_version + ssh +
 		// Give view permissons to any role that requires reading the workspace to conduct their actions.
-		organization->view_workspaces + viewer + 
+		organization->view_workspaces + viewer +
 		workspace_owner
 	permission edit = organization->edit_workspaces + editor + workspace_owner
 	permission delete = organization->delete_workspaces + deletor + workspace_owner

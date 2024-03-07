@@ -330,14 +330,14 @@ func (obj *ObjOrganization) MemberUser(subs ...*ObjUser) *ObjOrganization {
 	return obj
 }
 
-// Default_permissiosGroup schema.zed:53
-// Relationship: organization:<id>#default_permissios@group:<id>#membership
-func (obj *ObjOrganization) Default_permissiosGroup(subs ...*ObjGroup) *ObjOrganization {
+// Default_permissionsGroup schema.zed:53
+// Relationship: organization:<id>#default_permissions@group:<id>#membership
+func (obj *ObjOrganization) Default_permissionsGroup(subs ...*ObjGroup) *ObjOrganization {
 	for i := range subs {
 		sub := subs[i]
 		obj.Builder.AddRelationship(v1.Relationship{
 			Resource: obj.Obj,
-			Relation: "default_permissios",
+			Relation: "default_permissions",
 			Subject: &v1.SubjectReference{
 				Object:           sub.Obj,
 				OptionalRelation: "membership",
@@ -348,14 +348,14 @@ func (obj *ObjOrganization) Default_permissiosGroup(subs ...*ObjGroup) *ObjOrgan
 	return obj
 }
 
-// Default_permissiosUser schema.zed:53
-// Relationship: organization:<id>#default_permissios@user:<id>
-func (obj *ObjOrganization) Default_permissiosUser(subs ...*ObjUser) *ObjOrganization {
+// Default_permissionsUser schema.zed:53
+// Relationship: organization:<id>#default_permissions@user:<id>
+func (obj *ObjOrganization) Default_permissionsUser(subs ...*ObjUser) *ObjOrganization {
 	for i := range subs {
 		sub := subs[i]
 		obj.Builder.AddRelationship(v1.Relationship{
 			Resource: obj.Obj,
-			Relation: "default_permissios",
+			Relation: "default_permissions",
 			Subject: &v1.SubjectReference{
 				Object:           sub.Obj,
 				OptionalRelation: "",
@@ -883,7 +883,7 @@ func (obj *ObjPlatform) User_adminUser(subs ...*ObjUser) *ObjPlatform {
 }
 
 // User_adminGroup schema.zed:30
-// Relationship: platform:<id>#user_admin@group:<id>#member
+// Relationship: platform:<id>#user_admin@group:<id>#membership
 func (obj *ObjPlatform) User_adminGroup(subs ...*ObjGroup) *ObjPlatform {
 	for i := range subs {
 		sub := subs[i]
@@ -892,7 +892,7 @@ func (obj *ObjPlatform) User_adminGroup(subs ...*ObjGroup) *ObjPlatform {
 			Relation: "user_admin",
 			Subject: &v1.SubjectReference{
 				Object:           sub.Obj,
-				OptionalRelation: "member",
+				OptionalRelation: "membership",
 			},
 			OptionalCaveat: nil,
 		})

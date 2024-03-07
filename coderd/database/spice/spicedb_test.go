@@ -1,8 +1,12 @@
 package spice_test
 
 import (
+	"database/sql"
 	"testing"
+	"time"
 
+	"github.com/google/uuid"
+	"github.com/moby/moby/pkg/namesgenerator"
 	"github.com/stretchr/testify/require"
 
 	"cdr.dev/slog"
@@ -12,6 +16,7 @@ import (
 	"github.com/coder/coder/v2/coderd/database/dbgen"
 	"github.com/coder/coder/v2/coderd/database/dbmem"
 	"github.com/coder/coder/v2/coderd/database/dbtestutil"
+	"github.com/coder/coder/v2/coderd/database/dbtime"
 	"github.com/coder/coder/v2/coderd/database/spice"
 	"github.com/coder/coder/v2/coderd/rbac"
 	"github.com/coder/coder/v2/testutil"
@@ -48,15 +53,29 @@ func TestInNestedTX(t *testing.T) {
 	require.NoError(t, err, "must not error")
 }
 
-func TestSimplePermissionCheck(t *testing.T) {
+func TestExampleDatabaseLayer(t *testing.T) {
 	t.Parallel()
 
-	db := dbmem.New()
-	logger := slogtest.Make(t, nil)
+	logger := slogtest.Make(t, &slogtest.Options{
+		IgnoreErrors:   false,
+		SkipCleanup:    false,
+		IgnoredErrorIs: nil,
+	}).Leveled(slog.LevelDebug)
 
 	ctx := testutil.Context(t, testutil.WaitLong)
 
-	def, err := db.GetDefaultOrganization(ctx)
+	db, err := spice.New(ctx, &spice.SpiceServerOpts{
+		PostgresURI: "",
+		Logger:      logger,
+		Store:       dbmem.New(),
+		Debug:       true,
+	})
+	require.NoError(t, err)
+	err = db.Run(ctx)
+	require.NoError(t, err)
+
+	god := spice.AsGod(ctx)
+	def, err := db.GetDefaultOrganization(god)
 	require.NoError(t, err)
 
 	owner := dbgen.User(t, db, database.User{
@@ -78,33 +97,35 @@ func TestSimplePermissionCheck(t *testing.T) {
 		OrganizationID: def.ID,
 	})
 
-	sdb, err := spice.New(testutil.Context(t, testutil.WaitLong), &spice.SpiceServerOpts{
-		PostgresURI: "",
-		Logger:      logger,
-		Store:       db,
-	})
-	require.NoError(t, err)
-
 	memberCtx := spice.AsUser(ctx, member.ID)
 	otherMemberCtx := spice.AsUser(ctx, otherMember.ID)
 	ownerCtx := spice.AsUser(ctx, owner.ID)
 
 	// Workspace owner by member
-	workspace, err := sdb.InsertWorkspace(memberCtx, database.InsertWorkspaceParams{
-		OwnerID:        member.ID,
-		OrganizationID: def.ID,
+	workspace, err := db.InsertWorkspace(memberCtx, database.InsertWorkspaceParams{
+		ID:                uuid.New(),
+		CreatedAt:         dbtime.Now(),
+		UpdatedAt:         dbtime.Now(),
+		OwnerID:           member.ID,
+		OrganizationID:    def.ID,
+		TemplateID:        uuid.New(),
+		Name:              namesgenerator.GetRandomName(1),
+		AutostartSchedule: sql.NullString{},
+		Ttl:               sql.NullInt64{},
+		LastUsedAt:        time.Time{},
+		AutomaticUpdates:  database.AutomaticUpdatesNever,
 	})
 	require.NoError(t, err)
 
 	// Member can view
-	_, err = sdb.GetWorkspaceByID(memberCtx, workspace.ID)
-	require.NoError(t, err)
+	_, err = db.GetWorkspaceByID(memberCtx, workspace.ID)
+	require.NoErrorf(t, err, "Member: %s", member.ID.String())
 
 	// Owner can view
-	_, err = sdb.GetWorkspaceByID(ownerCtx, workspace.ID)
-	require.NoError(t, err)
+	_, err = db.GetWorkspaceByID(ownerCtx, workspace.ID)
+	require.NoErrorf(t, err, "Owner: %s", owner.ID.String())
 
 	// Other member cannot
-	_, err = sdb.GetWorkspaceByID(otherMemberCtx, workspace.ID)
-	require.Error(t, err)
+	_, err = db.GetWorkspaceByID(otherMemberCtx, workspace.ID)
+	require.Errorf(t, err, "OtherMember: %s", otherMember.ID.String())
 }

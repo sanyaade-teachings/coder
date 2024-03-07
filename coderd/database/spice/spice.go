@@ -2,6 +2,7 @@ package spice
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	"github.com/authzed/spicedb/pkg/cmd/datastore"
@@ -20,17 +21,18 @@ type SpiceServerOpts struct {
 	Logger      slog.Logger
 	// Store is the application database store.
 	Store database.Store
+	Debug bool
 }
 
 // TODO: Handle PG vs Memory
-func New(ctx context.Context, opts *SpiceServerOpts) (database.Store, error) {
+func New(ctx context.Context, opts *SpiceServerOpts) (*SpiceDB, error) {
 	if opts.Store == nil {
 		return nil, xerrors.Errorf("store is required")
 	}
 
 	// Do not double wrap
 	if slices.Contains(opts.Store.Wrappers(), wrapname) {
-		return opts.Store, nil
+		return nil, fmt.Errorf("store already wrapped with spicedb")
 	}
 
 	engine := datastore.MemoryEngine
@@ -120,9 +122,14 @@ func New(ctx context.Context, opts *SpiceServerOpts) (database.Store, error) {
 		return nil, xerrors.Errorf("spicedb config failed: %w", err)
 	}
 
-	return &SpiceDB{
+	sdb := &SpiceDB{
 		Store:  opts.Store,
 		logger: opts.Logger,
 		srv:    runnable,
-	}, nil
+	}
+
+	if opts.Debug {
+		sdb.Debugging(true)
+	}
+	return sdb, nil
 }

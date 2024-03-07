@@ -21,6 +21,7 @@ import (
 	"github.com/coder/coder/v2/coderd/database/dbtime"
 	"github.com/coder/coder/v2/coderd/database/provisionerjobs"
 	"github.com/coder/coder/v2/coderd/database/pubsub"
+	"github.com/coder/coder/v2/coderd/database/spice"
 	"github.com/coder/coder/v2/coderd/rbac"
 	"github.com/coder/coder/v2/cryptorand"
 )
@@ -29,12 +30,12 @@ import (
 // maintained. Any fields omitted will have sensible defaults generated.
 
 // genCtx is to give all generator functions permission if the db is a dbauthz db.
-var genCtx = dbauthz.As(context.Background(), rbac.Subject{
+var genCtx = spice.AsGod(dbauthz.As(context.Background(), rbac.Subject{
 	ID:     "owner",
 	Roles:  rbac.Roles(must(rbac.RoleNames{rbac.RoleOwner()}.Expand())),
 	Groups: []string{},
 	Scope:  rbac.ExpandableScope(rbac.ScopeAll),
-})
+}))
 
 func AuditLog(t testing.TB, db database.Store, seed database.AuditLog) database.AuditLog {
 	log, err := db.InsertAuditLog(genCtx, database.InsertAuditLogParams{
