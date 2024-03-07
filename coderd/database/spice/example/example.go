@@ -142,7 +142,8 @@ func populateRelationships(ctx context.Context, permSrv v1.PermissionsServiceCli
 func newServer(ctx context.Context) (server.RunnableServer, error) {
 	ds, err := datastore.NewDatastore(ctx,
 		datastore.DefaultDatastoreConfig().ToOption(),
-		datastore.WithEngine(datastore.PostgresEngine),
+		datastore.WithEngine(datastore.MemoryEngine),
+		//datastore.WithEngine(datastore.PostgresEngine),
 		datastore.WithRequestHedgingEnabled(false),
 		// must run migrations first
 		// To get cli: go install github.com/authzed/spicedb/cmd/spicedb@latest
