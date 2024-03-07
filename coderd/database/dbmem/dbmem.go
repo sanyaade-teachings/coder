@@ -30,6 +30,8 @@ import (
 	"github.com/coder/coder/v2/provisionersdk"
 )
 
+const DatabaseWrapName = "dbmem.querier"
+
 var validProxyByHostnameRegex = regexp.MustCompile(`^[a-zA-Z0-9._-]+$`)
 
 var errForeignKeyConstraint = &pq.Error{
@@ -116,7 +118,7 @@ type FakeQuerier struct {
 }
 
 func (*FakeQuerier) Wrappers() []string {
-	return []string{}
+	return []string{DatabaseWrapName}
 }
 
 type fakeTx struct {

@@ -17,6 +17,8 @@ import (
 	"github.com/coder/coder/v2/coderd/database/spice/policy"
 )
 
+const wrapname = "spicedb.querier"
+
 type SpiceDB struct {
 	// TODO: Do not embed anonymously. This is just a lazy way to skip
 	// 		having to implement all interface methods for now.
@@ -44,6 +46,10 @@ type SpiceDB struct {
 
 	// debug will print extra debug information on all checks.
 	debug bool
+}
+
+func (s *SpiceDB) Wrappers() []string {
+	return append(s.Store.Wrappers(), wrapname)
 }
 
 func (s *SpiceDB) Run(ctx context.Context) error {
@@ -88,13 +94,25 @@ func (s *SpiceDB) Close() {
 	s.cancel()
 }
 
-// TODO: Params to this function?
-func (s *SpiceDB) WriteRelationship(ctx context.Context) (delete func() error, _ error) {
+// WriteRelationships returns a revert function that will delete all the relationships that
+// were written.
+func (s *SpiceDB) WriteRelationships(ctx context.Context, relationships ...v1.Relationship) (revert func() error, _ error) {
 	opts := []grpc.CallOption{}
 	if s.debug {
 		opt, callback := debugSpiceDBRPC(ctx, s.logger)
 		opts = append(opts, opt)
 		defer callback()
+	}
+
+	updates := make([]*v1.RelationshipUpdate, 0, len(relationships))
+	for i := range relationships {
+		// Make a copy so to ensure the delete function has the correct data.
+		// We could definitely improve the memory allocations here.
+		cpy := relationships[i]
+		updates = append(updates, &v1.RelationshipUpdate{
+			Operation:    v1.RelationshipUpdate_OPERATION_TOUCH,
+			Relationship: &cpy,
+		})
 	}
 
 	// A relationship can be written like this:
@@ -103,48 +121,35 @@ func (s *SpiceDB) WriteRelationship(ctx context.Context) (delete func() error, _
 	// 	tup := tuple.Parse(rel)
 	// 	v1Rel := tuple.ToRelationship(tup)
 	resp, err := s.permCli.WriteRelationships(ctx, &v1.WriteRelationshipsRequest{
-		Updates: []*v1.RelationshipUpdate{
-			{
-				Operation: v1.RelationshipUpdate_OPERATION_TOUCH,
-				Relationship: &v1.Relationship{
-					Resource:       nil,
-					Relation:       "",
-					Subject:        nil,
-					OptionalCaveat: nil,
-				},
-			},
-		},
+		Updates:               updates,
 		OptionalPreconditions: nil,
 	}, opts...)
 	if err != nil {
 		return nil, xerrors.Errorf("write relationship: %w", err)
 	}
+	// TODO: We should probably return this? Allow it to be stored on the object or something?
 	s.zedToken.Store(resp.WrittenAt)
 
-	// delete is an optional callback the caller can use to delete the relationship
+	// revert is an optional callback the caller can use to delete the relationship
 	// if it's no longer needed. This is helpful if their tx fails.
-	delete = func() error {
-		// TODO: Fill this out correctly
-		resp, err := s.permCli.DeleteRelationships(ctx, &v1.DeleteRelationshipsRequest{
-			RelationshipFilter:            nil,
-			OptionalPreconditions:         nil,
-			OptionalLimit:                 0,
-			OptionalAllowPartialDeletions: false,
-		})
-		if err != nil {
-			return err
+	revert = func() error {
+		for i := range updates {
+			updates[i].Operation = v1.RelationshipUpdate_OPERATION_DELETE
 		}
 
-		if resp.DeletionProgress == v1.DeleteRelationshipsResponse_DELETION_PROGRESS_PARTIAL {
-			// This should not happen if OptionalAllowPartialDeletions=false
-			return xerrors.Errorf("partial deletion occurred")
+		// The delete api might be quicker, but this an atomic operation.
+		resp, err := s.permCli.WriteRelationships(ctx, &v1.WriteRelationshipsRequest{
+			Updates:               updates,
+			OptionalPreconditions: nil,
+		}, opts...)
+		if err != nil {
+			return xerrors.Errorf("revert relationships: %w", err)
 		}
-		if resp.DeletionProgress == v1.DeleteRelationshipsResponse_DELETION_PROGRESS_COMPLETE {
-			return xerrors.Errorf("deletion failed")
-		}
+		s.zedToken.Store(resp.WrittenAt)
+
 		return nil
 	}
-	return delete, nil
+	return revert, nil
 }
 
 // TODO: Params to this function?

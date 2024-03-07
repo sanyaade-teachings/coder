@@ -7,6 +7,7 @@ import (
 	"github.com/authzed/spicedb/pkg/cmd/datastore"
 	"github.com/authzed/spicedb/pkg/cmd/server"
 	"github.com/authzed/spicedb/pkg/cmd/util"
+	"golang.org/x/exp/slices"
 	"golang.org/x/xerrors"
 
 	"cdr.dev/slog"
@@ -17,13 +18,19 @@ type SpiceServerOpts struct {
 	// If 'PostgresURI' is empty, will default to in memory
 	PostgresURI string
 	Logger      slog.Logger
-	Store       database.Store
+	// Store is the application database store.
+	Store database.Store
 }
 
 // TODO: Handle PG vs Memory
-func New(ctx context.Context, opts *SpiceServerOpts) (*SpiceDB, error) {
+func New(ctx context.Context, opts *SpiceServerOpts) (database.Store, error) {
 	if opts.Store == nil {
 		return nil, xerrors.Errorf("store is required")
+	}
+
+	// Do not double wrap
+	if slices.Contains(opts.Store.Wrappers(), wrapname) {
+		return opts.Store, nil
 	}
 
 	engine := datastore.MemoryEngine

@@ -18,6 +18,8 @@ import (
 	"golang.org/x/xerrors"
 )
 
+const DatabaseWrapName = "sql.querier"
+
 // Store contains all queryable database functions.
 // It extends the generated interface to add transaction support.
 type Store interface {
@@ -70,7 +72,7 @@ type sqlQuerier struct {
 }
 
 func (*sqlQuerier) Wrappers() []string {
-	return []string{}
+	return []string{DatabaseWrapName}
 }
 
 // Ping returns the time it takes to ping the database.

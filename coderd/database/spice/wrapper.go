@@ -3,28 +3,37 @@ package spice
 import (
 	"context"
 
+	"golang.org/x/xerrors"
+
+	"cdr.dev/slog"
+
 	"github.com/coder/coder/v2/coderd/database"
 	"github.com/coder/coder/v2/coderd/database/spice/policy"
 )
 
 func (s *SpiceDB) InsertWorkspace(ctx context.Context, arg database.InsertWorkspaceParams) (database.Workspace, error) {
-	s.Store.InTx(func(store database.Store) error {
-		workspace, err := s.Store.InsertWorkspace(ctx, arg)
-		if err != nil {
-			return err
+	org := policy.Organization(arg.OrganizationID)
+	owner := policy.User(arg.OwnerID)
+	wrk := policy.Workspace(arg.ID).
+		For_userUser(owner).
+		Organization(org)
+
+	revert, err := s.WriteRelationships(ctx, wrk.Relationships...)
+	if err != nil {
+		return database.Workspace{}, xerrors.Errorf("write relationships: %w", err)
+	}
+
+	workspace, err := s.Store.InsertWorkspace(ctx, arg)
+	if err != nil {
+		revertError := revert()
+		if revertError != nil {
+			s.logger.Error(ctx, "revert relationships",
+				slog.F("workspace", arg.ID),
+				slog.Error(revertError),
+			)
 		}
+		return database.Workspace{}, err
+	}
 
-		org := policy.Organization(workspace.OrganizationID)
-		owner := policy.User(workspace.OwnerID)
-		policy.Workspace(workspace.ID).
-			For_userUser(owner).
-			Organization(org)
-
-		// Insert relationships
-		//workspace.
-		//s.WriteRelationship(ctx)
-		return nil
-	}, nil)
-
-	return s.Store.InsertWorkspace(ctx, arg)
+	return workspace, nil
 }
