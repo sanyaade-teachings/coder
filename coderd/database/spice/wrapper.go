@@ -20,9 +20,16 @@ func (s *SpiceDB) InsertWorkspace(ctx context.Context, arg database.InsertWorksp
 }
 
 func (s *SpiceDB) InsertUser(ctx context.Context, arg database.InsertUserParams) (database.User, error) {
-	// Create a new user
 	builder := policy.New()
+	// New user
 	user := builder.User(arg.ID)
+
+	// Ensure we can create this user
+	err := s.Check(builder.SitePlatform().CanCreate_user(ctx))
+	if err != nil {
+		return database.User{}, err
+	}
+
 	// This kinda sucks, mapping coder roles to authzed roles.
 	// There needs to be a better way to do this.
 	for _, role := range arg.RBACRoles {
@@ -38,8 +45,14 @@ func (s *SpiceDB) InsertUser(ctx context.Context, arg database.InsertUserParams)
 
 func (s *SpiceDB) InsertOrganization(ctx context.Context, arg database.InsertOrganizationParams) (database.Organization, error) {
 	builder := policy.New()
+	site := builder.SitePlatform()
 	builder.Organization(arg.ID).
-		Platform(builder.SitePlatform())
+		Platform(site)
+
+	err := s.Check(site.CanCreate_organization(ctx))
+	if err != nil {
+		return database.Organization{}, err
+	}
 
 	return WithRelations(ctx, s, builder.Relationships, s.Store.InsertOrganization, arg)
 }
@@ -47,13 +60,18 @@ func (s *SpiceDB) InsertOrganization(ctx context.Context, arg database.InsertOrg
 func (s *SpiceDB) InsertOrganizationMember(ctx context.Context, arg database.InsertOrganizationMemberParams) (database.OrganizationMember, error) {
 	builder := policy.New()
 	user := builder.User(arg.UserID)
-	builder.Organization(arg.OrganizationID).
+	org := builder.Organization(arg.OrganizationID).
 		// TODO: This is assuming a user is only an org member
 		Default_permissiosUser(user).
 		// We add this because a migration creates the original default org.
 		// If a user is added to this org, we want to ensure the org is tracked in
 		// the authz graph.
 		Platform(builder.SitePlatform())
+
+	err := s.Check(org.CanCreate_org_member(ctx))
+	if err != nil {
+		return database.OrganizationMember{}, err
+	}
 
 	return WithRelations(ctx, s, builder.Relationships, s.Store.InsertOrganizationMember, arg)
 }

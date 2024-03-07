@@ -64,18 +64,26 @@ func (obj *Obj{{ capitalize $outerName }}) {{ capitalize $element.FunctionName }
 
 
 {{ range $index, $element := .Permissions }}
+
+// Can{{ capitalize $element.FunctionName }} {{ $filename }}:{{ .LinePos }}
+{{ comment $element.Comment }}
+func (obj *Obj{{ capitalize $outerName }}) Can{{ capitalize $element.FunctionName }}(ctx context.Context) (context.Context, string, *v1.ObjectReference) {
+	return ctx, "{{ $element.Permission }}", obj.Object()
+}
+
 {{/*
 	The subject is almost always going to be an *ObjUser, but we should account for non-user subjects.
 	If we end up only using users here, we should replace 'AuthzedObject' with '*ObjUser' in the function signature for
 	type safety.
 */}}
-// Can{{ capitalize $element.FunctionName }}By {{ $filename }}:{{ .LinePos }}
-{{ comment $element.Comment }}
-func (obj *Obj{{ capitalize $outerName }}) Can{{ capitalize $element.FunctionName }}By(subs ...AuthzedObject) *Obj{{ capitalize $outerName }}{
-	for i := range subs {
-		sub := subs[i]
-		obj.Builder.CheckPermission(sub, "{{ $element.Permission }}", obj)
-	}
-	return obj
-}
+{{/*func (obj *Obj{{ capitalize $outerName }}) Can{{ capitalize $element.FunctionName }}By(subs ...AuthzedObject) *Obj{{ capitalize $outerName }}{*/}}
+{{/*	for i := range subs {*/}}
+{{/*		sub := subs[i]*/}}
+{{/*		obj.Builder.CheckPermission(sub, "{{ $element.Permission }}", obj)*/}}
+{{/*	}*/}}
+{{/*	return obj*/}}
+{{/*}*/}}
+
+
+
 {{ end }}

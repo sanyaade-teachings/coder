@@ -2,11 +2,13 @@ package spice
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/authzed/authzed-go/pkg/responsemeta"
 	v1 "github.com/authzed/authzed-go/proto/authzed/api/v1"
 	"github.com/authzed/spicedb/pkg/cmd/server"
 	"github.com/authzed/spicedb/pkg/tuple"
+	"github.com/google/uuid"
 	"golang.org/x/xerrors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -22,6 +24,23 @@ import (
 const (
 	wrapname = "spicedb.querier"
 )
+
+type spiceActorKey struct{}
+
+// NoActorError wraps ErrNoRows for the api to return a 404. This is the correct
+// response when the user is not authorized.
+var NoActorError = xerrors.Errorf("no authorization actor in context: %w", sql.ErrNoRows)
+
+func ActorFromContext(ctx context.Context) (*v1.SubjectReference, bool) {
+	a, ok := ctx.Value(spiceActorKey{}).(*v1.SubjectReference)
+	return a, ok
+}
+
+func AsUser(ctx context.Context, userID uuid.UUID) context.Context {
+	return context.WithValue(ctx, spiceActorKey{}, &v1.SubjectReference{
+		Object: policy.New().User(userID).Object(),
+	})
+}
 
 type SpiceDB struct {
 	// TODO: Do not embed anonymously. This is just a lazy way to skip
@@ -98,13 +117,6 @@ func (s *SpiceDB) Debugging(set bool) {
 
 func (s *SpiceDB) Close() {
 	s.cancel()
-}
-
-func merge(a []v1.Relationship, rest ...[]v1.Relationship) []v1.Relationship {
-	for i := range rest {
-		a = append(a, rest[i]...)
-	}
-	return a
 }
 
 // WithRelationsExec allows exec functions that do not return a return object.
@@ -216,7 +228,12 @@ func (s *SpiceDB) WriteRelationships(ctx context.Context, relationships ...v1.Re
 }
 
 // TODO: Params to this function?
-func (s *SpiceDB) Check(ctx context.Context) (bool, error) {
+func (s *SpiceDB) Check(ctx context.Context, permission string, resource *v1.ObjectReference) error {
+	actor, ok := ActorFromContext(ctx)
+	if !ok {
+		return NoActorError
+	}
+
 	opts := []grpc.CallOption{}
 	if s.debug {
 		opt, callback := debugSpiceDBRPC(ctx, s.logger)
@@ -232,17 +249,23 @@ func (s *SpiceDB) Check(ctx context.Context) (bool, error) {
 	//	r := tuple.ToRelationship(tup)
 	resp, err := s.permCli.CheckPermission(ctx, &v1.CheckPermissionRequest{
 		Consistency: &v1.Consistency{Requirement: &v1.Consistency_AtLeastAsFresh{s.zedToken.Load()}},
-		Resource:    nil,
-		Permission:  "",
-		Subject:     nil,
+		Resource:    resource,
+		Permission:  permission,
+		Subject:     actor,
 		// Context for caveats
 		Context: nil,
 	}, opts...)
 	if err != nil {
-		return false, xerrors.Errorf("check permission: %w", err)
+		return xerrors.Errorf("check permission: %w", err)
 	}
 
-	return resp.Permissionship == v1.CheckPermissionResponse_PERMISSIONSHIP_HAS_PERMISSION, nil
+	if resp.Permissionship == v1.CheckPermissionResponse_PERMISSIONSHIP_HAS_PERMISSION {
+		return nil
+	}
+	if resp.Permissionship == v1.CheckPermissionResponse_PERMISSIONSHIP_CONDITIONAL_PERMISSION {
+		return xerrors.Errorf("not authorized: conditional permission")
+	}
+	return xerrors.Errorf("not authorized")
 }
 
 func debugSpiceDBRPC(ctx context.Context, logger slog.Logger) (opt grpc.CallOption, debugString func()) {

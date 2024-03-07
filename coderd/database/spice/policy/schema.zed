@@ -27,10 +27,13 @@ definition platform {
 	// Avoid calling this relation an "owner" though as we use that term for ownership
 	// of specific resources.
 	relation administrator: user
+	relation user_admin: user | group#member
 
 	// platform roles should only be used to escalate permissions above the "member" level.
 	// All platform members are just "user". So add these with caution.
 	permission super_admin = administrator
+	permission create_user = user_admin + super_admin
+	permission create_organization = super_admin
 }
 
 // TODO: Organization member
@@ -89,6 +92,7 @@ definition organization {
 	permission membership = member + default_permissios +
 		workspace_viewer + workspace_creator + workspace_deletor + workspace_editor +
 		template_viewer + template_creator + template_deletor + template_editor + template_permission_manager + template_insights_viewer
+	permission create_org_member = platform -> create_user
 
 
 	/*************************
