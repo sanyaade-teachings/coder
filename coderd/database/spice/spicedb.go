@@ -6,6 +6,7 @@ import (
 	"github.com/authzed/authzed-go/pkg/responsemeta"
 	v1 "github.com/authzed/authzed-go/proto/authzed/api/v1"
 	"github.com/authzed/spicedb/pkg/cmd/server"
+	"github.com/authzed/spicedb/pkg/tuple"
 	"golang.org/x/xerrors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -23,7 +24,9 @@ type SpiceDB struct {
 	// TODO: Do not embed anonymously. This is just a lazy way to skip
 	// 		having to implement all interface methods for now.
 	database.Store
-	logger slog.Logger
+	// reverts is only used if in a transaction.
+	reverts reverter
+	logger  slog.Logger
 
 	srv       server.RunnableServer
 	schemaCli v1.SchemaServiceClient
@@ -94,9 +97,41 @@ func (s *SpiceDB) Close() {
 	s.cancel()
 }
 
+// WithRelationsExec allows exec functions that do not return a return object.
+func WithRelationsExec[A any](ctx context.Context, s *SpiceDB, relations []v1.Relationship, do func(ctx context.Context, arg A) error, arg A) error {
+	_, err := WithRelations(ctx, s, relations, func(ctx context.Context, arg A) (interface{}, error) {
+		return nil, do(ctx, arg)
+	}, arg)
+	return err
+}
+
+func WithRelations[A any, R any](ctx context.Context, s *SpiceDB, relations []v1.Relationship, do func(ctx context.Context, arg A) (R, error), arg A) (R, error) {
+	var empty R
+	revert, err := s.WriteRelationships(ctx, relations...)
+	if err != nil {
+		return empty, xerrors.Errorf("write relationships: %w", err)
+	}
+	r, err := do(ctx, arg)
+	if err != nil {
+		revert()
+		return r, err
+	}
+	return r, nil
+}
+
+func (s *SpiceDB) WithRelations(ctx context.Context, relations []v1.Relationship, do func() error) (context.Context, error) {
+	revert, err := s.WriteRelationships(ctx, relations...)
+	if err != nil {
+		return nil, xerrors.Errorf("write relationships: %w", err)
+	}
+
+	ctx = context.WithValue(ctx, "revert", revert)
+	return ctx, nil
+}
+
 // WriteRelationships returns a revert function that will delete all the relationships that
 // were written.
-func (s *SpiceDB) WriteRelationships(ctx context.Context, relationships ...v1.Relationship) (revert func() error, _ error) {
+func (s *SpiceDB) WriteRelationships(ctx context.Context, relationships ...v1.Relationship) (revert func(), _ error) {
 	opts := []grpc.CallOption{}
 	if s.debug {
 		opt, callback := debugSpiceDBRPC(ctx, s.logger)
@@ -132,7 +167,7 @@ func (s *SpiceDB) WriteRelationships(ctx context.Context, relationships ...v1.Re
 
 	// revert is an optional callback the caller can use to delete the relationship
 	// if it's no longer needed. This is helpful if their tx fails.
-	revert = func() error {
+	revert = func() {
 		for i := range updates {
 			updates[i].Operation = v1.RelationshipUpdate_OPERATION_DELETE
 		}
@@ -142,12 +177,30 @@ func (s *SpiceDB) WriteRelationships(ctx context.Context, relationships ...v1.Re
 			Updates:               updates,
 			OptionalPreconditions: nil,
 		}, opts...)
-		if err != nil {
-			return xerrors.Errorf("revert relationships: %w", err)
+		if resp != nil && resp.WrittenAt != nil {
+			s.zedToken.Store(resp.WrittenAt)
 		}
-		s.zedToken.Store(resp.WrittenAt)
+		if err != nil {
+			// Log out all the relationships that might have failed.
+			rels := make([]string, 0, len(updates))
+			for _, up := range updates {
+				str, _ := tuple.StringRelationship(up.Relationship)
+				rels = append(rels, str)
+			}
+			s.logger.Error(ctx, "revert relationships",
+				slog.Error(err),
+				slog.F("quantity", len(updates)),
+				slog.F("relationships", rels),
+			)
+		}
+	}
 
-		return nil
+	// If we are in a tx, handle all reverts as a single batch.
+	// This will make sure any single failure triggers every revert
+	// in the same tx.
+	if s.reverts != nil {
+		s.reverts.AddRevert(revert)
+		revert = noop
 	}
 	return revert, nil
 }
