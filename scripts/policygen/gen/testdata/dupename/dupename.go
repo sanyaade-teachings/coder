@@ -17,6 +17,7 @@ func (s String) String() string {
 
 type AuthzedObject interface {
 	Object() *v1.ObjectReference
+	AsSubject() *v1.SubjectReference
 }
 
 // PermissionCheck can be read as:
@@ -65,8 +66,9 @@ func (b *Builder) CheckPermission(subj AuthzedObject, permission string, on Auth
 }
 
 type ObjOther struct {
-	Obj     *v1.ObjectReference
-	Builder *Builder
+	Obj              *v1.ObjectReference
+	OptionalRelation string
+	Builder          *Builder
 }
 
 func (b *Builder) Other(id fmt.Stringer) *ObjOther {
@@ -84,9 +86,17 @@ func (obj *ObjOther) Object() *v1.ObjectReference {
 	return obj.Obj
 }
 
+func (obj *ObjOther) AsSubject() *v1.SubjectReference {
+	return &v1.SubjectReference{
+		Object:           obj.Object(),
+		OptionalRelation: obj.OptionalRelation,
+	}
+}
+
 type ObjPerson struct {
-	Obj     *v1.ObjectReference
-	Builder *Builder
+	Obj              *v1.ObjectReference
+	OptionalRelation string
+	Builder          *Builder
 }
 
 func (b *Builder) Person(id fmt.Stringer) *ObjPerson {
@@ -102,6 +112,13 @@ func (b *Builder) Person(id fmt.Stringer) *ObjPerson {
 
 func (obj *ObjPerson) Object() *v1.ObjectReference {
 	return obj.Obj
+}
+
+func (obj *ObjPerson) AsSubject() *v1.SubjectReference {
+	return &v1.SubjectReference{
+		Object:           obj.Object(),
+		OptionalRelation: obj.OptionalRelation,
+	}
 }
 
 // UserUser dupename.zed:8
@@ -166,8 +183,9 @@ func (obj *ObjPerson) CanRead(ctx context.Context) (context.Context, string, *v1
 }
 
 type ObjUser struct {
-	Obj     *v1.ObjectReference
-	Builder *Builder
+	Obj              *v1.ObjectReference
+	OptionalRelation string
+	Builder          *Builder
 }
 
 func (b *Builder) User(id fmt.Stringer) *ObjUser {
@@ -183,4 +201,11 @@ func (b *Builder) User(id fmt.Stringer) *ObjUser {
 
 func (obj *ObjUser) Object() *v1.ObjectReference {
 	return obj.Obj
+}
+
+func (obj *ObjUser) AsSubject() *v1.SubjectReference {
+	return &v1.SubjectReference{
+		Object:           obj.Object(),
+		OptionalRelation: obj.OptionalRelation,
+	}
 }

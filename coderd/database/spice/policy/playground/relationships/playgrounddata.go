@@ -70,7 +70,7 @@ func GenerateRelationships() {
 		Organization(companyOrganization)
 	devVersion := Playground.Template_version(policy.String("active")).Template(devTemplate)
 
-	Playground.AssertTrue(devTemplate.CanUse, elliot, groupHR)
+	Playground.AssertTrue(devTemplate.CanUse, elliot, groupHR.AsAnyMembership())
 	var _ = devVersion
 
 	// Steven will create a workspace.

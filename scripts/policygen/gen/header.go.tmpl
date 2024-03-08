@@ -17,6 +17,7 @@ func (s String) String() string {
 
 type AuthzedObject interface {
 	Object() *v1.ObjectReference
+	AsSubject() *v1.SubjectReference
 }
 
 // PermissionCheck can be read as:

@@ -1,7 +1,15 @@
 definition user{}
 
+definition group {
+	relation member: user | group#member
+
+	// membership is a synthetic permission that traverses the member relation
+	// of any nested groups.
+	permission membership = member
+}
+
 definition folder {
-    relation owner: user
+    relation owner: user | group#membership
 
     permission read = owner
 }
@@ -11,4 +19,5 @@ definition file {
 
     permission read = folder->read
 }
+
 

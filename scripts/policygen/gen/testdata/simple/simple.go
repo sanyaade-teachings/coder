@@ -17,6 +17,7 @@ func (s String) String() string {
 
 type AuthzedObject interface {
 	Object() *v1.ObjectReference
+	AsSubject() *v1.SubjectReference
 }
 
 // PermissionCheck can be read as:
@@ -65,8 +66,9 @@ func (b *Builder) CheckPermission(subj AuthzedObject, permission string, on Auth
 }
 
 type ObjResource struct {
-	Obj     *v1.ObjectReference
-	Builder *Builder
+	Obj              *v1.ObjectReference
+	OptionalRelation string
+	Builder          *Builder
 }
 
 func (b *Builder) Resource(id fmt.Stringer) *ObjResource {
@@ -82,6 +84,13 @@ func (b *Builder) Resource(id fmt.Stringer) *ObjResource {
 
 func (obj *ObjResource) Object() *v1.ObjectReference {
 	return obj.Obj
+}
+
+func (obj *ObjResource) AsSubject() *v1.SubjectReference {
+	return &v1.SubjectReference{
+		Object:           obj.Object(),
+		OptionalRelation: obj.OptionalRelation,
+	}
 }
 
 // Writer simple.zed:7
@@ -135,8 +144,9 @@ func (obj *ObjResource) CanView(ctx context.Context) (context.Context, string, *
 }
 
 type ObjUser struct {
-	Obj     *v1.ObjectReference
-	Builder *Builder
+	Obj              *v1.ObjectReference
+	OptionalRelation string
+	Builder          *Builder
 }
 
 func (b *Builder) User(id fmt.Stringer) *ObjUser {
@@ -152,4 +162,11 @@ func (b *Builder) User(id fmt.Stringer) *ObjUser {
 
 func (obj *ObjUser) Object() *v1.ObjectReference {
 	return obj.Obj
+}
+
+func (obj *ObjUser) AsSubject() *v1.SubjectReference {
+	return &v1.SubjectReference{
+		Object:           obj.Object(),
+		OptionalRelation: obj.OptionalRelation,
+	}
 }

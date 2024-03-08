@@ -17,6 +17,7 @@ func (s String) String() string {
 
 type AuthzedObject interface {
 	Object() *v1.ObjectReference
+	AsSubject() *v1.SubjectReference
 }
 
 // PermissionCheck can be read as:
@@ -65,8 +66,9 @@ func (b *Builder) CheckPermission(subj AuthzedObject, permission string, on Auth
 }
 
 type ObjFile struct {
-	Obj     *v1.ObjectReference
-	Builder *Builder
+	Obj              *v1.ObjectReference
+	OptionalRelation string
+	Builder          *Builder
 }
 
 func (b *Builder) File(id fmt.Stringer) *ObjFile {
@@ -84,7 +86,14 @@ func (obj *ObjFile) Object() *v1.ObjectReference {
 	return obj.Obj
 }
 
-// Folder optionalrelation.zed:10
+func (obj *ObjFile) AsSubject() *v1.SubjectReference {
+	return &v1.SubjectReference{
+		Object:           obj.Object(),
+		OptionalRelation: obj.OptionalRelation,
+	}
+}
+
+// Folder optionalrelation.zed:18
 // Relationship: file:<id>#folder@folder:<id>
 func (obj *ObjFile) Folder(subs ...*ObjFolder) *ObjFile {
 	for i := range subs {
@@ -102,7 +111,7 @@ func (obj *ObjFile) Folder(subs ...*ObjFolder) *ObjFile {
 	return obj
 }
 
-// CanRead optionalrelation.zed:12
+// CanRead optionalrelation.zed:20
 // Object: file:<id>
 // Schema: permission read = folder->read
 func (obj *ObjFile) CanRead(ctx context.Context) (context.Context, string, *v1.ObjectReference) {
@@ -110,8 +119,9 @@ func (obj *ObjFile) CanRead(ctx context.Context) (context.Context, string, *v1.O
 }
 
 type ObjFolder struct {
-	Obj     *v1.ObjectReference
-	Builder *Builder
+	Obj              *v1.ObjectReference
+	OptionalRelation string
+	Builder          *Builder
 }
 
 func (b *Builder) Folder(id fmt.Stringer) *ObjFolder {
@@ -129,9 +139,16 @@ func (obj *ObjFolder) Object() *v1.ObjectReference {
 	return obj.Obj
 }
 
-// Owner optionalrelation.zed:4
+func (obj *ObjFolder) AsSubject() *v1.SubjectReference {
+	return &v1.SubjectReference{
+		Object:           obj.Object(),
+		OptionalRelation: obj.OptionalRelation,
+	}
+}
+
+// OwnerUser optionalrelation.zed:12
 // Relationship: folder:<id>#owner@user:<id>
-func (obj *ObjFolder) Owner(subs ...*ObjUser) *ObjFolder {
+func (obj *ObjFolder) OwnerUser(subs ...*ObjUser) *ObjFolder {
 	for i := range subs {
 		sub := subs[i]
 		obj.Builder.AddRelationship(v1.Relationship{
@@ -147,16 +164,125 @@ func (obj *ObjFolder) Owner(subs ...*ObjUser) *ObjFolder {
 	return obj
 }
 
-// CanRead optionalrelation.zed:6
+// OwnerGroup optionalrelation.zed:12
+// Relationship: folder:<id>#owner@group:<id>#membership
+func (obj *ObjFolder) OwnerGroup(subs ...*ObjGroup) *ObjFolder {
+	for i := range subs {
+		sub := subs[i]
+		obj.Builder.AddRelationship(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "owner",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "membership",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+// CanRead optionalrelation.zed:14
 // Object: folder:<id>
 // Schema: permission read = owner
 func (obj *ObjFolder) CanRead(ctx context.Context) (context.Context, string, *v1.ObjectReference) {
 	return ctx, "read", obj.Object()
 }
 
+type ObjGroup struct {
+	Obj              *v1.ObjectReference
+	OptionalRelation string
+	Builder          *Builder
+}
+
+func (b *Builder) Group(id fmt.Stringer) *ObjGroup {
+	o := &ObjGroup{
+		Obj: &v1.ObjectReference{
+			ObjectType: "group",
+			ObjectId:   id.String(),
+		},
+		Builder: b,
+	}
+	return o
+}
+
+func (obj *ObjGroup) Object() *v1.ObjectReference {
+	return obj.Obj
+}
+
+func (obj *ObjGroup) AsSubject() *v1.SubjectReference {
+	return &v1.SubjectReference{
+		Object:           obj.Object(),
+		OptionalRelation: obj.OptionalRelation,
+	}
+}
+
+// MemberUser optionalrelation.zed:4
+// Relationship: group:<id>#member@user:<id>
+func (obj *ObjGroup) MemberUser(subs ...*ObjUser) *ObjGroup {
+	for i := range subs {
+		sub := subs[i]
+		obj.Builder.AddRelationship(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "member",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+// MemberGroup optionalrelation.zed:4
+// Relationship: group:<id>#member@group:<id>#member
+func (obj *ObjGroup) MemberGroup(subs ...*ObjGroup) *ObjGroup {
+	for i := range subs {
+		sub := subs[i]
+		obj.Builder.AddRelationship(v1.Relationship{
+			Resource: obj.Obj,
+			Relation: "member",
+			Subject: &v1.SubjectReference{
+				Object:           sub.Obj,
+				OptionalRelation: "member",
+			},
+			OptionalCaveat: nil,
+		})
+	}
+	return obj
+}
+
+// CanMembership optionalrelation.zed:8
+// Object: group:<id>
+func (obj *ObjGroup) CanMembership(ctx context.Context) (context.Context, string, *v1.ObjectReference) {
+	return ctx, "membership", obj.Object()
+}
+
+// AsAnyMembership
+// folder:<id>#owner
+func (obj *ObjGroup) AsAnyMembership() *ObjGroup {
+	return &ObjGroup{
+		Obj:              obj.Object(),
+		OptionalRelation: "membership",
+		Builder:          obj.Builder,
+	}
+}
+
+// AsAnyMember
+// group:<id>#member
+func (obj *ObjGroup) AsAnyMember() *ObjGroup {
+	return &ObjGroup{
+		Obj:              obj.Object(),
+		OptionalRelation: "member",
+		Builder:          obj.Builder,
+	}
+}
+
 type ObjUser struct {
-	Obj     *v1.ObjectReference
-	Builder *Builder
+	Obj              *v1.ObjectReference
+	OptionalRelation string
+	Builder          *Builder
 }
 
 func (b *Builder) User(id fmt.Stringer) *ObjUser {
@@ -172,4 +298,11 @@ func (b *Builder) User(id fmt.Stringer) *ObjUser {
 
 func (obj *ObjUser) Object() *v1.ObjectReference {
 	return obj.Obj
+}
+
+func (obj *ObjUser) AsSubject() *v1.SubjectReference {
+	return &v1.SubjectReference{
+		Object:           obj.Object(),
+		OptionalRelation: obj.OptionalRelation,
+	}
 }

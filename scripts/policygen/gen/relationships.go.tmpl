@@ -1,5 +1,6 @@
 type Obj{{ capitalize .Name }} struct {
 	Obj *v1.ObjectReference
+	OptionalRelation string
 	Builder *Builder
 }
 
@@ -18,6 +19,13 @@ func (b *Builder){{ capitalize .Name }}(id fmt.Stringer) *Obj{{ capitalize .Name
 {{ $outerName := .Name }}
 func (obj *Obj{{ capitalize $outerName }}) Object() *v1.ObjectReference {
 	return obj.Obj
+}
+
+func (obj *Obj{{ capitalize $outerName }}) AsSubject() *v1.SubjectReference {
+	return &v1.SubjectReference{
+		Object:           obj.Object(),
+		OptionalRelation: obj.OptionalRelation,
+	}
 }
 
 {{ range $index, $element := .DirectRelations }}
@@ -86,5 +94,27 @@ func (obj *Obj{{ capitalize $outerName }}) Can{{ capitalize $element.FunctionNam
 {{/*}*/}}
 
 
+
+{{ end }}
+
+
+{{ range $index, $element := .IncludeRelations }}
+{{/*
+	I really dislike this one, but things feel incomplete without it.
+	When doing things like, "Can group X do Y?", you really need to check:
+	"Can any 'member' in group X do Y?"
+*/}}
+
+// AsAny{{ capitalize .RelationName }}
+{{- range $_, $from := $element.From }}
+// {{ $from }}
+{{- end }}
+func (obj *Obj{{ capitalize $outerName }}) AsAny{{ capitalize .RelationName }}() *Obj{{ capitalize $outerName }} {
+	return &Obj{{ capitalize $outerName }}{
+		Obj:           obj.Object(),
+		OptionalRelation: "{{.RelationName }}",
+		Builder:          obj.Builder,
+	}
+}
 
 {{ end }}

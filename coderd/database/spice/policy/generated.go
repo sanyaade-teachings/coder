@@ -17,6 +17,7 @@ func (s String) String() string {
 
 type AuthzedObject interface {
 	Object() *v1.ObjectReference
+	AsSubject() *v1.SubjectReference
 }
 
 // PermissionCheck can be read as:
@@ -70,8 +71,9 @@ func (b *Builder) SitePlatform() *ObjPlatform {
 }
 
 type ObjFile struct {
-	Obj     *v1.ObjectReference
-	Builder *Builder
+	Obj              *v1.ObjectReference
+	OptionalRelation string
+	Builder          *Builder
 }
 
 func (b *Builder) File(id fmt.Stringer) *ObjFile {
@@ -87,6 +89,13 @@ func (b *Builder) File(id fmt.Stringer) *ObjFile {
 
 func (obj *ObjFile) Object() *v1.ObjectReference {
 	return obj.Obj
+}
+
+func (obj *ObjFile) AsSubject() *v1.SubjectReference {
+	return &v1.SubjectReference{
+		Object:           obj.Object(),
+		OptionalRelation: obj.OptionalRelation,
+	}
 }
 
 // Template_version schema.zed:220
@@ -115,8 +124,9 @@ func (obj *ObjFile) CanView(ctx context.Context) (context.Context, string, *v1.O
 }
 
 type ObjGroup struct {
-	Obj     *v1.ObjectReference
-	Builder *Builder
+	Obj              *v1.ObjectReference
+	OptionalRelation string
+	Builder          *Builder
 }
 
 func (b *Builder) Group(id fmt.Stringer) *ObjGroup {
@@ -132,6 +142,13 @@ func (b *Builder) Group(id fmt.Stringer) *ObjGroup {
 
 func (obj *ObjGroup) Object() *v1.ObjectReference {
 	return obj.Obj
+}
+
+func (obj *ObjGroup) AsSubject() *v1.SubjectReference {
+	return &v1.SubjectReference{
+		Object:           obj.Object(),
+		OptionalRelation: obj.OptionalRelation,
+	}
 }
 
 // MemberUser schema.zed:17
@@ -194,9 +211,48 @@ func (obj *ObjGroup) CanMembership(ctx context.Context) (context.Context, string
 	return ctx, "membership", obj.Object()
 }
 
+// AsAnyMembership
+// workspace:<id>#viewer
+// workspace:<id>#editor
+// workspace:<id>#deletor
+// workspace:<id>#selector
+// workspace:<id>#connector
+// workspace:<id>#for_user
+// organization:<id>#member
+// organization:<id>#default_permissions
+// organization:<id>#workspace_viewer
+// organization:<id>#workspace_creator
+// organization:<id>#workspace_deletor
+// organization:<id>#workspace_editor
+// organization:<id>#template_viewer
+// organization:<id>#template_creator
+// organization:<id>#template_deletor
+// organization:<id>#template_editor
+// organization:<id>#template_permission_manager
+// organization:<id>#template_insights_viewer
+// platform:<id>#user_admin
+func (obj *ObjGroup) AsAnyMembership() *ObjGroup {
+	return &ObjGroup{
+		Obj:              obj.Object(),
+		OptionalRelation: "membership",
+		Builder:          obj.Builder,
+	}
+}
+
+// AsAnyMember
+// group:<id>#member
+func (obj *ObjGroup) AsAnyMember() *ObjGroup {
+	return &ObjGroup{
+		Obj:              obj.Object(),
+		OptionalRelation: "member",
+		Builder:          obj.Builder,
+	}
+}
+
 type ObjJob struct {
-	Obj     *v1.ObjectReference
-	Builder *Builder
+	Obj              *v1.ObjectReference
+	OptionalRelation string
+	Builder          *Builder
 }
 
 func (b *Builder) Job(id fmt.Stringer) *ObjJob {
@@ -212,6 +268,13 @@ func (b *Builder) Job(id fmt.Stringer) *ObjJob {
 
 func (obj *ObjJob) Object() *v1.ObjectReference {
 	return obj.Obj
+}
+
+func (obj *ObjJob) AsSubject() *v1.SubjectReference {
+	return &v1.SubjectReference{
+		Object:           obj.Object(),
+		OptionalRelation: obj.OptionalRelation,
+	}
 }
 
 // Template_version schema.zed:229
@@ -257,8 +320,9 @@ func (obj *ObjJob) CanView(ctx context.Context) (context.Context, string, *v1.Ob
 }
 
 type ObjOrganization struct {
-	Obj     *v1.ObjectReference
-	Builder *Builder
+	Obj              *v1.ObjectReference
+	OptionalRelation string
+	Builder          *Builder
 }
 
 func (b *Builder) Organization(id fmt.Stringer) *ObjOrganization {
@@ -274,6 +338,13 @@ func (b *Builder) Organization(id fmt.Stringer) *ObjOrganization {
 
 func (obj *ObjOrganization) Object() *v1.ObjectReference {
 	return obj.Obj
+}
+
+func (obj *ObjOrganization) AsSubject() *v1.SubjectReference {
+	return &v1.SubjectReference{
+		Object:           obj.Object(),
+		OptionalRelation: obj.OptionalRelation,
+	}
 }
 
 // Platform schema.zed:43
@@ -827,8 +898,9 @@ func (obj *ObjOrganization) CanCreate_file(ctx context.Context) (context.Context
 }
 
 type ObjPlatform struct {
-	Obj     *v1.ObjectReference
-	Builder *Builder
+	Obj              *v1.ObjectReference
+	OptionalRelation string
+	Builder          *Builder
 }
 
 func (b *Builder) Platform(id fmt.Stringer) *ObjPlatform {
@@ -844,6 +916,13 @@ func (b *Builder) Platform(id fmt.Stringer) *ObjPlatform {
 
 func (obj *ObjPlatform) Object() *v1.ObjectReference {
 	return obj.Obj
+}
+
+func (obj *ObjPlatform) AsSubject() *v1.SubjectReference {
+	return &v1.SubjectReference{
+		Object:           obj.Object(),
+		OptionalRelation: obj.OptionalRelation,
+	}
 }
 
 // Administrator schema.zed:29
@@ -921,8 +1000,9 @@ func (obj *ObjPlatform) CanCreate_organization(ctx context.Context) (context.Con
 }
 
 type ObjTemplate struct {
-	Obj     *v1.ObjectReference
-	Builder *Builder
+	Obj              *v1.ObjectReference
+	OptionalRelation string
+	Builder          *Builder
 }
 
 func (b *Builder) Template(id fmt.Stringer) *ObjTemplate {
@@ -938,6 +1018,13 @@ func (b *Builder) Template(id fmt.Stringer) *ObjTemplate {
 
 func (obj *ObjTemplate) Object() *v1.ObjectReference {
 	return obj.Obj
+}
+
+func (obj *ObjTemplate) AsSubject() *v1.SubjectReference {
+	return &v1.SubjectReference{
+		Object:           obj.Object(),
+		OptionalRelation: obj.OptionalRelation,
+	}
 }
 
 // Organization schema.zed:192
@@ -1023,8 +1110,9 @@ func (obj *ObjTemplate) CanWorkspace_view(ctx context.Context) (context.Context,
 }
 
 type ObjTemplate_version struct {
-	Obj     *v1.ObjectReference
-	Builder *Builder
+	Obj              *v1.ObjectReference
+	OptionalRelation string
+	Builder          *Builder
 }
 
 func (b *Builder) Template_version(id fmt.Stringer) *ObjTemplate_version {
@@ -1040,6 +1128,13 @@ func (b *Builder) Template_version(id fmt.Stringer) *ObjTemplate_version {
 
 func (obj *ObjTemplate_version) Object() *v1.ObjectReference {
 	return obj.Obj
+}
+
+func (obj *ObjTemplate_version) AsSubject() *v1.SubjectReference {
+	return &v1.SubjectReference{
+		Object:           obj.Object(),
+		OptionalRelation: obj.OptionalRelation,
+	}
 }
 
 // Template schema.zed:214
@@ -1068,8 +1163,9 @@ func (obj *ObjTemplate_version) CanView(ctx context.Context) (context.Context, s
 }
 
 type ObjUser struct {
-	Obj     *v1.ObjectReference
-	Builder *Builder
+	Obj              *v1.ObjectReference
+	OptionalRelation string
+	Builder          *Builder
 }
 
 func (b *Builder) User(id fmt.Stringer) *ObjUser {
@@ -1087,9 +1183,17 @@ func (obj *ObjUser) Object() *v1.ObjectReference {
 	return obj.Obj
 }
 
+func (obj *ObjUser) AsSubject() *v1.SubjectReference {
+	return &v1.SubjectReference{
+		Object:           obj.Object(),
+		OptionalRelation: obj.OptionalRelation,
+	}
+}
+
 type ObjWorkspace struct {
-	Obj     *v1.ObjectReference
-	Builder *Builder
+	Obj              *v1.ObjectReference
+	OptionalRelation string
+	Builder          *Builder
 }
 
 func (b *Builder) Workspace(id fmt.Stringer) *ObjWorkspace {
@@ -1105,6 +1209,13 @@ func (b *Builder) Workspace(id fmt.Stringer) *ObjWorkspace {
 
 func (obj *ObjWorkspace) Object() *v1.ObjectReference {
 	return obj.Obj
+}
+
+func (obj *ObjWorkspace) AsSubject() *v1.SubjectReference {
+	return &v1.SubjectReference{
+		Object:           obj.Object(),
+		OptionalRelation: obj.OptionalRelation,
+	}
 }
 
 // Organization schema.zed:133
@@ -1381,8 +1492,9 @@ func (obj *ObjWorkspace) CanSsh(ctx context.Context) (context.Context, string, *
 }
 
 type ObjWorkspace_agent struct {
-	Obj     *v1.ObjectReference
-	Builder *Builder
+	Obj              *v1.ObjectReference
+	OptionalRelation string
+	Builder          *Builder
 }
 
 func (b *Builder) Workspace_agent(id fmt.Stringer) *ObjWorkspace_agent {
@@ -1398,6 +1510,13 @@ func (b *Builder) Workspace_agent(id fmt.Stringer) *ObjWorkspace_agent {
 
 func (obj *ObjWorkspace_agent) Object() *v1.ObjectReference {
 	return obj.Obj
+}
+
+func (obj *ObjWorkspace_agent) AsSubject() *v1.SubjectReference {
+	return &v1.SubjectReference{
+		Object:           obj.Object(),
+		OptionalRelation: obj.OptionalRelation,
+	}
 }
 
 // Workspace schema.zed:176
@@ -1426,8 +1545,9 @@ func (obj *ObjWorkspace_agent) CanView(ctx context.Context) (context.Context, st
 }
 
 type ObjWorkspace_build struct {
-	Obj     *v1.ObjectReference
-	Builder *Builder
+	Obj              *v1.ObjectReference
+	OptionalRelation string
+	Builder          *Builder
 }
 
 func (b *Builder) Workspace_build(id fmt.Stringer) *ObjWorkspace_build {
@@ -1443,6 +1563,13 @@ func (b *Builder) Workspace_build(id fmt.Stringer) *ObjWorkspace_build {
 
 func (obj *ObjWorkspace_build) Object() *v1.ObjectReference {
 	return obj.Obj
+}
+
+func (obj *ObjWorkspace_build) AsSubject() *v1.SubjectReference {
+	return &v1.SubjectReference{
+		Object:           obj.Object(),
+		OptionalRelation: obj.OptionalRelation,
+	}
 }
 
 // Workspace schema.zed:167
@@ -1470,8 +1597,9 @@ func (obj *ObjWorkspace_build) CanView(ctx context.Context) (context.Context, st
 }
 
 type ObjWorkspace_resources struct {
-	Obj     *v1.ObjectReference
-	Builder *Builder
+	Obj              *v1.ObjectReference
+	OptionalRelation string
+	Builder          *Builder
 }
 
 func (b *Builder) Workspace_resources(id fmt.Stringer) *ObjWorkspace_resources {
@@ -1487,6 +1615,13 @@ func (b *Builder) Workspace_resources(id fmt.Stringer) *ObjWorkspace_resources {
 
 func (obj *ObjWorkspace_resources) Object() *v1.ObjectReference {
 	return obj.Obj
+}
+
+func (obj *ObjWorkspace_resources) AsSubject() *v1.SubjectReference {
+	return &v1.SubjectReference{
+		Object:           obj.Object(),
+		OptionalRelation: obj.OptionalRelation,
+	}
 }
 
 // Workspace schema.zed:182

@@ -17,6 +17,7 @@ func (s String) String() string {
 
 type AuthzedObject interface {
 	Object() *v1.ObjectReference
+	AsSubject() *v1.SubjectReference
 }
 
 // PermissionCheck can be read as:
@@ -65,8 +66,9 @@ func (b *Builder) CheckPermission(subj AuthzedObject, permission string, on Auth
 }
 
 type ObjGroup struct {
-	Obj     *v1.ObjectReference
-	Builder *Builder
+	Obj              *v1.ObjectReference
+	OptionalRelation string
+	Builder          *Builder
 }
 
 func (b *Builder) Group(id fmt.Stringer) *ObjGroup {
@@ -82,6 +84,13 @@ func (b *Builder) Group(id fmt.Stringer) *ObjGroup {
 
 func (obj *ObjGroup) Object() *v1.ObjectReference {
 	return obj.Obj
+}
+
+func (obj *ObjGroup) AsSubject() *v1.SubjectReference {
+	return &v1.SubjectReference{
+		Object:           obj.Object(),
+		OptionalRelation: obj.OptionalRelation,
+	}
 }
 
 // MemberUser group.zed:4
@@ -145,9 +154,20 @@ func (obj *ObjGroup) CanMembership(ctx context.Context) (context.Context, string
 	return ctx, "membership", obj.Object()
 }
 
+// AsAnyMember
+// group:<id>#member
+func (obj *ObjGroup) AsAnyMember() *ObjGroup {
+	return &ObjGroup{
+		Obj:              obj.Object(),
+		OptionalRelation: "member",
+		Builder:          obj.Builder,
+	}
+}
+
 type ObjUser struct {
-	Obj     *v1.ObjectReference
-	Builder *Builder
+	Obj              *v1.ObjectReference
+	OptionalRelation string
+	Builder          *Builder
 }
 
 func (b *Builder) User(id fmt.Stringer) *ObjUser {
@@ -163,4 +183,11 @@ func (b *Builder) User(id fmt.Stringer) *ObjUser {
 
 func (obj *ObjUser) Object() *v1.ObjectReference {
 	return obj.Obj
+}
+
+func (obj *ObjUser) AsSubject() *v1.SubjectReference {
+	return &v1.SubjectReference{
+		Object:           obj.Object(),
+		OptionalRelation: obj.OptionalRelation,
+	}
 }

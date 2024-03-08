@@ -49,7 +49,7 @@ func (r *Relationships) Validate(checks ...PermCheck) *Relationships {
 func (r *Relationships) AssertTrue(check PermCheck, subjects ...policy.AuthzedObject) *Relationships {
 	for _, subject := range subjects {
 		subject := subject
-		r.True = append(r.True, r.assert(subject, check))
+		r.True = append(r.True, r.assert(subject.AsSubject(), check))
 	}
 	return r
 }
@@ -57,20 +57,17 @@ func (r *Relationships) AssertTrue(check PermCheck, subjects ...policy.AuthzedOb
 func (r *Relationships) AssertFalse(check PermCheck, subjects ...policy.AuthzedObject) *Relationships {
 	for _, subject := range subjects {
 		subject := subject
-		r.False = append(r.False, r.assert(subject, check))
+		r.False = append(r.False, r.assert(subject.AsSubject(), check))
 	}
 	return r
 }
 
-func (r *Relationships) assert(subject policy.AuthzedObject, check PermCheck) v1.Relationship {
+func (r *Relationships) assert(subject *v1.SubjectReference, check PermCheck) v1.Relationship {
 	_, permission, obj := check(context.Background())
 	return v1.Relationship{
-		Resource: obj,
-		Relation: permission,
-		Subject: &v1.SubjectReference{
-			Object:           subject.Object(),
-			OptionalRelation: "",
-		},
+		Resource:       obj,
+		Relation:       permission,
+		Subject:        subject,
 		OptionalCaveat: nil,
 	}
 }
