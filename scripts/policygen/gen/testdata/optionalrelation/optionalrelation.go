@@ -105,7 +105,6 @@ func (obj *ObjFile) Folder(subs ...*ObjFolder) *ObjFile {
 // CanRead optionalrelation.zed:12
 // Object: file:<id>
 // Schema: permission read = folder->read
-
 func (obj *ObjFile) CanRead(ctx context.Context) (context.Context, string, *v1.ObjectReference) {
 	return ctx, "read", obj.Object()
 }
@@ -151,7 +150,6 @@ func (obj *ObjFolder) Owner(subs ...*ObjUser) *ObjFolder {
 // CanRead optionalrelation.zed:6
 // Object: folder:<id>
 // Schema: permission read = owner
-
 func (obj *ObjFolder) CanRead(ctx context.Context) (context.Context, string, *v1.ObjectReference) {
 	return ctx, "read", obj.Object()
 }

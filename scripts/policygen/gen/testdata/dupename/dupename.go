@@ -161,7 +161,6 @@ func (obj *ObjPerson) Test(subs ...*ObjUser) *ObjPerson {
 // CanRead dupename.zed:11
 // Object: person:<id>
 // Schema: permission read = user
-
 func (obj *ObjPerson) CanRead(ctx context.Context) (context.Context, string, *v1.ObjectReference) {
 	return ctx, "read", obj.Object()
 }

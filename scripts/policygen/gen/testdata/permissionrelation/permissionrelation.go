@@ -105,7 +105,6 @@ func (obj *ObjFile) Folder(subs ...*ObjFolder) *ObjFile {
 // CanRead permissionrelation.zed:20
 // Object: file:<id>
 // Schema: permission read = folder->read
-
 func (obj *ObjFile) CanRead(ctx context.Context) (context.Context, string, *v1.ObjectReference) {
 	return ctx, "read", obj.Object()
 }
@@ -169,7 +168,6 @@ func (obj *ObjFolder) OwnerGroup(subs ...*ObjGroup) *ObjFolder {
 // CanRead permissionrelation.zed:14
 // Object: folder:<id>
 // Schema: permission read = owner
-
 func (obj *ObjFolder) CanRead(ctx context.Context) (context.Context, string, *v1.ObjectReference) {
 	return ctx, "read", obj.Object()
 }
@@ -232,7 +230,6 @@ func (obj *ObjGroup) MemberGroup(subs ...*ObjGroup) *ObjGroup {
 
 // CanMembership permissionrelation.zed:8
 // Object: group:<id>
-
 func (obj *ObjGroup) CanMembership(ctx context.Context) (context.Context, string, *v1.ObjectReference) {
 	return ctx, "membership", obj.Object()
 }

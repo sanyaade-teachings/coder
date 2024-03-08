@@ -123,7 +123,6 @@ func (obj *ObjResource) Viewer(subs ...*ObjUser) *ObjResource {
 // CanWrite simple.zed:10
 // Object: resource:<id>
 // Schema: permission write = writer
-
 func (obj *ObjResource) CanWrite(ctx context.Context) (context.Context, string, *v1.ObjectReference) {
 	return ctx, "write", obj.Object()
 }
@@ -131,7 +130,6 @@ func (obj *ObjResource) CanWrite(ctx context.Context) (context.Context, string, 
 // CanView simple.zed:11
 // Object: resource:<id>
 // Schema: permission view = viewer + writer
-
 func (obj *ObjResource) CanView(ctx context.Context) (context.Context, string, *v1.ObjectReference) {
 	return ctx, "view", obj.Object()
 }

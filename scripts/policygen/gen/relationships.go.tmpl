@@ -65,9 +65,9 @@ func (obj *Obj{{ capitalize $outerName }}) {{ capitalize $element.FunctionName }
 
 {{ range $index, $element := .Permissions }}
 
+{{/* The context argument is added for easier use of the Check function. */}}
 // Can{{ capitalize $element.FunctionName }} {{ $filename }}:{{ .LinePos }}
 {{ comment $element.Comment }}
-{{/* The context argument is added for easier use of the Check function. */}}
 func (obj *Obj{{ capitalize $outerName }}) Can{{ capitalize $element.FunctionName }}(ctx context.Context) (context.Context, string, *v1.ObjectReference) {
 	return ctx, "{{ $element.Permission }}", obj.Object()
 }

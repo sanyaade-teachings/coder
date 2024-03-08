@@ -141,7 +141,6 @@ func (obj *ObjGroup) MemberWildcard() *ObjGroup {
 // CanMembership group.zed:6
 // Object: group:<id>
 // Schema: permission membership = member
-
 func (obj *ObjGroup) CanMembership(ctx context.Context) (context.Context, string, *v1.ObjectReference) {
 	return ctx, "membership", obj.Object()
 }
