@@ -204,7 +204,7 @@ definition template {
 	permission edit_pemissions = organization->manage_template_permissions
 
 	// Use is permitted by the owning organization.
-	permission use = organization
+	permission use = organization -> membership
 
 	// Synthetic view
 	permission workspace_view = workspace->view

@@ -2,6 +2,7 @@
 package policy
 
 import (
+	"context"
 	"fmt"
 
 	v1 "github.com/authzed/authzed-go/proto/authzed/api/v1"
@@ -157,15 +158,12 @@ func (obj *ObjPerson) Test(subs ...*ObjUser) *ObjPerson {
 	return obj
 }
 
-// CanReadBy dupename.zed:11
+// CanRead dupename.zed:11
 // Object: person:<id>
 // Schema: permission read = user
-func (obj *ObjPerson) CanReadBy(subs ...AuthzedObject) *ObjPerson {
-	for i := range subs {
-		sub := subs[i]
-		obj.Builder.CheckPermission(sub, "read", obj)
-	}
-	return obj
+
+func (obj *ObjPerson) CanRead(ctx context.Context) (context.Context, string, *v1.ObjectReference) {
+	return ctx, "read", obj.Object()
 }
 
 type ObjUser struct {

@@ -66,7 +66,8 @@ func GenerateRelationships() {
 		Template_viewerGroup(groupCostControl, groupEngineers, groupSales)
 
 	// Make some resources!
-	devTemplate := Playground.Template(policy.String("dev-template")).Organization(companyOrganization)
+	devTemplate := Playground.Template(policy.String("dev-template")).
+		Organization(companyOrganization)
 	devVersion := Playground.Template_version(policy.String("active")).Template(devTemplate)
 
 	Playground.AssertTrue(devTemplate.CanUse, elliot, groupHR)

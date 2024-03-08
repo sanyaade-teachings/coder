@@ -86,5 +86,5 @@ func (s *SpiceDB) GetWorkspaceByID(ctx context.Context, id uuid.UUID) (database.
 		return database.Workspace{}, err
 	}
 
-	return database.Workspace{}, nil
+	return s.Store.GetWorkspaceByID(ctx, id)
 }

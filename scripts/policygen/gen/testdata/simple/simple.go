@@ -2,6 +2,7 @@
 package policy
 
 import (
+	"context"
 	"fmt"
 
 	v1 "github.com/authzed/authzed-go/proto/authzed/api/v1"
@@ -119,26 +120,20 @@ func (obj *ObjResource) Viewer(subs ...*ObjUser) *ObjResource {
 	return obj
 }
 
-// CanWriteBy simple.zed:10
+// CanWrite simple.zed:10
 // Object: resource:<id>
 // Schema: permission write = writer
-func (obj *ObjResource) CanWriteBy(subs ...AuthzedObject) *ObjResource {
-	for i := range subs {
-		sub := subs[i]
-		obj.Builder.CheckPermission(sub, "write", obj)
-	}
-	return obj
+
+func (obj *ObjResource) CanWrite(ctx context.Context) (context.Context, string, *v1.ObjectReference) {
+	return ctx, "write", obj.Object()
 }
 
-// CanViewBy simple.zed:11
+// CanView simple.zed:11
 // Object: resource:<id>
 // Schema: permission view = viewer + writer
-func (obj *ObjResource) CanViewBy(subs ...AuthzedObject) *ObjResource {
-	for i := range subs {
-		sub := subs[i]
-		obj.Builder.CheckPermission(sub, "view", obj)
-	}
-	return obj
+
+func (obj *ObjResource) CanView(ctx context.Context) (context.Context, string, *v1.ObjectReference) {
+	return ctx, "view", obj.Object()
 }
 
 type ObjUser struct {

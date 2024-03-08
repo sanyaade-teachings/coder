@@ -10,6 +10,18 @@ import (
 
 var Playground = NewRelationships()
 
+// Relationships is a wrapper around the policy builder. The policy builder will
+// keep track of new relationships. This wrapper keeps track of permission checks
+// (either should be true or false) and validations. These are all concepts
+// on the authzed playground.
+// https://play.authzed.com/
+type Relationships struct {
+	*policy.Builder
+	True        []v1.Relationship
+	False       []v1.Relationship
+	Validations []v1.Relationship
+}
+
 func NewRelationships() *Relationships {
 	return &Relationships{
 		Builder:     policy.New(),
@@ -17,13 +29,6 @@ func NewRelationships() *Relationships {
 		False:       []v1.Relationship{},
 		Validations: []v1.Relationship{},
 	}
-}
-
-type Relationships struct {
-	*policy.Builder
-	True        []v1.Relationship
-	False       []v1.Relationship
-	Validations []v1.Relationship
 }
 
 type PermCheck = func(ctx context.Context) (context.Context, string, *v1.ObjectReference)

@@ -2,6 +2,7 @@
 package policy
 
 import (
+	"context"
 	"fmt"
 
 	v1 "github.com/authzed/authzed-go/proto/authzed/api/v1"
@@ -137,15 +138,12 @@ func (obj *ObjGroup) MemberWildcard() *ObjGroup {
 	return obj
 }
 
-// CanMembershipBy group.zed:6
+// CanMembership group.zed:6
 // Object: group:<id>
 // Schema: permission membership = member
-func (obj *ObjGroup) CanMembershipBy(subs ...AuthzedObject) *ObjGroup {
-	for i := range subs {
-		sub := subs[i]
-		obj.Builder.CheckPermission(sub, "membership", obj)
-	}
-	return obj
+
+func (obj *ObjGroup) CanMembership(ctx context.Context) (context.Context, string, *v1.ObjectReference) {
+	return ctx, "membership", obj.Object()
 }
 
 type ObjUser struct {
