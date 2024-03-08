@@ -79,6 +79,15 @@ func (s *SpiceDB) InsertOrganizationMember(ctx context.Context, arg database.Ins
 	return WithRelations(ctx, s, builder.Relationships, s.Store.InsertOrganizationMember, arg)
 }
 
+func (s *SpiceDB) G(ctx context.Context, arg database.GetWorkspacesParams) ([]database.Workspace, error) {
+	//fetch := s.Lookup(policy.New().Workspace(uuid.Nil).CanView(ctx))
+	//fetch(s.Store.GetWorkspaces, func(a database.GetWorkspacesParams) {
+	//
+	//})
+
+	return nil, nil
+}
+
 func (s *SpiceDB) GetWorkspaceByID(ctx context.Context, id uuid.UUID) (database.Workspace, error) {
 	wrk := policy.New().Workspace(id)
 	err := s.Check(wrk.CanView(ctx))

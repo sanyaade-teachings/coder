@@ -231,8 +231,14 @@ func newDef(obj *core.NamespaceDefinition) objectDefinition {
 				comment += "\nSchema: " + matches[1]
 			}
 
-			// For our case, we only care about the permissions name. The actual
-			// dynamic mapping is not needed for the policygen.
+			// For our case, we only care about the permissions name.
+			// If we decided to actually parse the AST, we could extract which
+			// relations that the permission is mapping to.
+			// With that information, we could add some sort of validation or
+			// type safety to ensure subjects passed in are in fact valid subjects.
+			//
+			// Right now, you could pass in any object to the "CanX" function, and
+			// it will try even though we know some objects will never have the permission.
 			perms = append(perms, objectPermission{
 				LinePos:      linePos,
 				Comment:      strings.TrimSpace(comment),

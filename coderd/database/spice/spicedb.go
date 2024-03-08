@@ -242,7 +242,6 @@ func (s *SpiceDB) WriteRelationships(ctx context.Context, relationships ...v1.Re
 	return revert, nil
 }
 
-// TODO: Params to this function?
 func (s *SpiceDB) Check(ctx context.Context, permission string, resource *v1.ObjectReference) error {
 	actor, ok := ActorFromContext(ctx)
 	if !ok {
@@ -287,6 +286,10 @@ func (s *SpiceDB) Check(ctx context.Context, permission string, resource *v1.Obj
 	}
 	return xerrors.Errorf("not authorized")
 }
+
+//func (s *SpiceDB) Lookup(ctx context.Context, permission string, resource *v1.ObjectReference) ([]uuid.UUID, error) {
+
+//}
 
 func debugSpiceDBRPC(ctx context.Context, logger slog.Logger) (debugCtx context.Context, opt grpc.CallOption, debugString func()) {
 	var trailerMD metadata.MD

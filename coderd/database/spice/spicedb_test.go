@@ -68,7 +68,7 @@ func TestExampleDatabaseLayer(t *testing.T) {
 		PostgresURI: "",
 		Logger:      logger,
 		Store:       dbmem.New(),
-		Debug:       true,
+		Debug:       false,
 	})
 	require.NoError(t, err)
 	err = db.Run(ctx)
