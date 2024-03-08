@@ -63,13 +63,14 @@ func RunExample(ctx context.Context) error {
 		return err
 	}
 
-	relationships.AllAssertTrue()
 	// Example: "workspace:dogfood#view@user:root"
-	permsToCheck := relationships.AllAssertTrue()
+	permsToCheck := relationships.Playground.True
 
-	for _, perm := range permsToCheck {
-		tup := tuple.Parse(perm)
-		r := tuple.ToRelationship(tup)
+	for _, r := range permsToCheck {
+		perm, err := tuple.StringRelationship(&r)
+		if err != nil {
+			return xerrors.Errorf("unable to convert relationship to string: %w", err)
+		}
 
 		// Add debug information to the request so we can see the trace of the check.
 		var trailerMD metadata.MD
@@ -114,7 +115,7 @@ func populateRelationships(ctx context.Context, permSrv v1.PermissionsServiceCli
 	// Write in a workspace
 	relationships.GenerateRelationships()
 	// Example: group:hr#member@user:camilla
-	all := strings.Split(relationships.AllRelationsToStrings(), "\n")
+	all := relationships.RelationshipsToStrings(relationships.Playground.Relationships)
 
 	var token *v1.ZedToken
 	for _, rel := range all {
