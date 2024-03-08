@@ -1,19 +1,18 @@
 package relationships
 
 import (
-	"fmt"
-	"sort"
-	"strings"
-
-	core "github.com/authzed/spicedb/pkg/proto/core/v1"
+	"context"
 
 	v1 "github.com/authzed/authzed-go/proto/authzed/api/v1"
-	"github.com/authzed/spicedb/pkg/tuple"
+
+	"github.com/coder/coder/v2/coderd/database/spice/policy"
 )
+
+var Playground = NewRelationships()
 
 func NewRelationships() *Relationships {
 	return &Relationships{
-		Relations:   []v1.Relationship{},
+		Builder:     policy.New(),
 		True:        []v1.Relationship{},
 		False:       []v1.Relationship{},
 		Validations: []v1.Relationship{},
@@ -21,156 +20,81 @@ func NewRelationships() *Relationships {
 }
 
 type Relationships struct {
-	Relations   []v1.Relationship
+	*policy.Builder
 	True        []v1.Relationship
 	False       []v1.Relationship
 	Validations []v1.Relationship
 }
 
-func (r *Relationships) AddValidation(relationship v1.Relationship) {
-	r.Validations = append(r.Validations, relationship)
+type PermCheck = func(ctx context.Context) (context.Context, string, *v1.ObjectReference)
+
+// Validations will emit all users who can do this
+func (r *Relationships) Validate(checks ...PermCheck) *Relationships {
+	for _, check := range checks {
+		_, permission, obj := check(context.Background())
+		r.Validations = append(r.Validations, v1.Relationship{
+			Resource: obj,
+			Relation: permission,
+		})
+	}
+
+	return r
 }
 
-// AddRelation adds the graph relation for the playground.
-func (r *Relationships) AddRelation(relationship v1.Relationship) {
-	r.Relations = append(r.Relations, relationship)
+func (r *Relationships) AssertTrue(check PermCheck, subjects ...policy.AuthzedObject) *Relationships {
+	for _, subject := range subjects {
+		subject := subject
+		r.True = append(r.True, r.assert(subject, check))
+	}
+	return r
 }
 
-func (r *Relationships) AssertTrue(relationship v1.Relationship) {
-	r.True = append(r.True, relationship)
+func (r *Relationships) AssertFalse(check PermCheck, subjects ...policy.AuthzedObject) *Relationships {
+	for _, subject := range subjects {
+		subject := subject
+		r.False = append(r.False, r.assert(subject, check))
+	}
+	return r
 }
 
-func (r *Relationships) AssertFalse(relationship v1.Relationship) {
-	r.False = append(r.False, relationship)
-}
-
-func (r Relationships) AllRelations() []v1.Relationship {
-	return r.Relations
-}
-
-func (r Relationships) AllFalse() []v1.Relationship {
-	return r.False
-}
-
-func (r Relationships) AllTrue() []v1.Relationship {
-	return r.True
+func (r *Relationships) assert(subject policy.AuthzedObject, check PermCheck) v1.Relationship {
+	_, permission, obj := check(context.Background())
+	return v1.Relationship{
+		Resource: obj,
+		Relation: permission,
+		Subject: &v1.SubjectReference{
+			Object:           subject.Object(),
+			OptionalRelation: "",
+		},
+		OptionalCaveat: nil,
+	}
 }
 
 func (r Relationships) AllValidations() []v1.Relationship {
 	return r.Validations
 }
 
-type ObjectWithRelationships interface {
-	AllRelations() []v1.Relationship
-	AllTrue() []v1.Relationship
-	AllFalse() []v1.Relationship
-	AllValidations() []v1.Relationship
-	Type() string
-	Object() *v1.ObjectReference
-}
+func WorkspaceWithDeps(id string, organization *policy.ObjOrganization, template *policy.ObjTemplate, user *policy.ObjUser) *policy.ObjWorkspace {
+	// Perm checks: can use template, and can create workspace in org
+	Playground.AssertTrue(template.CanUse, user)
+	Playground.AssertTrue(organization.CanCreate_workspace, user)
 
-var allObjects []ObjectWithRelationships
+	workspace := Playground.Workspace(policy.String(id)).
+		Organization(organization).
+		For_userUser(user)
 
-func AllAssertTrue() []string {
-	all := make([]string, 0)
-	for _, o := range allObjects {
-		for _, t := range o.AllTrue() {
-			rStr, err := tuple.StringRelationship(&t)
-			if err != nil {
-				panic(err)
-			}
-			all = append(all, rStr)
-		}
-	}
-	return all
-}
-
-func AllValidations() map[string][]string {
-	all := make(map[string][]string, 0)
-	for _, o := range allObjects {
-		for _, t := range o.AllValidations() {
-			rStr := tuple.StringONR(&core.ObjectAndRelation{
-				Namespace: t.Resource.ObjectType,
-				ObjectId:  t.Resource.ObjectId,
-				Relation:  t.Relation,
-			})
-
-			all[rStr] = []string{}
-		}
-	}
-	return all
-}
-
-func AllAssertFalse() []string {
-	all := make([]string, 0)
-	for _, o := range allObjects {
-		for _, t := range o.AllFalse() {
-			rStr, err := tuple.StringRelationship(&t)
-			if err != nil {
-				panic(err)
-			}
-			all = append(all, rStr)
-		}
-	}
-	return all
-}
-
-func AllRelationsToStrings() string {
-	// group all the objects
-	buckets := make(map[string][]ObjectWithRelationships)
-	bucketKeys := make([]string, 0)
-	for _, o := range allObjects {
-		o := o
-		if _, ok := buckets[o.Type()]; !ok {
-			bucketKeys = append(bucketKeys, o.Type())
-		}
-		buckets[o.Type()] = append(buckets[o.Type()], o)
-	}
-
-	var allStrings []string
-
-	sort.Strings(bucketKeys)
-	for _, bucketKey := range bucketKeys {
-		bucket := buckets[bucketKey]
-		allStrings = append(allStrings, "// All "+bucket[0].Type()+"s")
-		for _, o := range bucket {
-			for _, r := range o.AllRelations() {
-				r := r
-				rStr, err := tuple.StringRelationship(&r)
-				if err != nil {
-					panic(err)
-				}
-				allStrings = append(allStrings, rStr)
-			}
-		}
-	}
-	return strings.Join(allStrings, "\n")
-}
-
-func WorkspaceWithDeps(id string, organization *ObjOrganization, template *ObjTemplate) *ObjWorkspace {
-	// Building a workspace means the team needs access to the template + provisioner
-	template.CanUseBy(organization) // Team perm check.
-
-	workspace := Workspace(id).Organization(organization)
-	build := Workspace_build(fmt.Sprintf("%s/build", id)).
-		Workspace(workspace)
-	agent := Workspace_agent(fmt.Sprintf("%s/agent", id)).
-		Workspace(workspace)
-	// app := Worspace_app(fmt.Sprintf("%s/app", id)).
+	//build := Workspace_build(fmt.Sprintf("%s/build", id)).
 	//	Workspace(workspace)
-	resources := Workspace_resources(fmt.Sprintf("%s/resources", id)).
-		Workspace(workspace)
+	//agent := Workspace_agent(fmt.Sprintf("%s/agent", id)).
+	//	Workspace(workspace)
+	//// app := Worspace_app(fmt.Sprintf("%s/app", id)).
+	////	Workspace(workspace)
+	//resources := Workspace_resources(fmt.Sprintf("%s/resources", id)).
+	//	Workspace(workspace)
 
 	// Add the template + provisioner relationship
 	template.Workspace(workspace)
 
-	var _, _, _ = build, agent, resources
+	//var _, _, _ = build, agent, resources
 	return workspace
-}
-
-func (obj *ObjTemplate) Version(id string) *ObjTemplate_version {
-	// This "/" syntax is not required. We usually use uuids, but strings
-	// are easier to read, and this helps us intuitively see relations.
-	return Template_version(fmt.Sprintf("%s/%s", obj.Obj.ObjectId, id)).
-		Template(obj)
 }

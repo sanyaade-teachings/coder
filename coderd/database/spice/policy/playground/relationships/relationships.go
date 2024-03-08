@@ -1,26 +1,29 @@
 package relationships
 
-import "github.com/google/uuid"
+import (
+	"github.com/coder/coder/v2/coderd/database/spice/policy"
+)
 
 func GenerateRelationships() {
 	var (
-		platform = Platform("default")
+		// Using the global playground relationships, so we can export to yaml later.
+		platform = Playground.SitePlatform()
 
-		root = User("root")
+		root = Playground.User(policy.String("root"))
 		// This is an incomplete list. Using real names to use intuitive groupings.
-		ammar     = User("ammar")
-		camilla   = User("camilla")
-		colin     = User("colin")
-		dean      = User("dean")
-		elliot    = User("elliot")
-		eric      = User("eric")
-		jon       = User("jon")
-		katherine = User("katherine")
-		kayla     = User("kayla")
-		kira      = User("kira")
-		kyle      = User("kyle")
-		shark     = User("shark")
-		steven    = User("steven")
+		ammar     = Playground.User(policy.String("ammar"))
+		camilla   = Playground.User(policy.String("camilla"))
+		colin     = Playground.User(policy.String("colin"))
+		dean      = Playground.User(policy.String("dean"))
+		elliot    = Playground.User(policy.String("elliot"))
+		eric      = Playground.User(policy.String("eric"))
+		jon       = Playground.User(policy.String("jon"))
+		katherine = Playground.User(policy.String("katherine"))
+		kayla     = Playground.User(policy.String("kayla"))
+		kira      = Playground.User(policy.String("kira"))
+		kyle      = Playground.User(policy.String("kyle"))
+		shark     = Playground.User(policy.String("shark"))
+		steven    = Playground.User(policy.String("steven"))
 	)
 
 	// Add platform roles
@@ -39,19 +42,17 @@ func GenerateRelationships() {
 	//      ├── developers
 	//      └── technical
 
-	groupEveryone := Group("everyone").MemberWildcard()
-	groupHR := Group("hr").MemberUser(camilla)
-	groupFinance := Group("finance").MemberUser(ammar, kyle, shark)
-	groupCostControl := Group("cost-control").MemberUser(ammar, kyle, dean, colin)
-	groupEngineers := Group("engineers").MemberUser(ammar, colin, dean, jon, kayla, kira, kyle, steven)
-	groupMarketing := Group("marketing").MemberUser(katherine, ammar)
-	groupSales := Group("sales").MemberUser(shark, eric)
+	groupEveryone := Playground.Group(policy.String("everyone")).MemberWildcard()
+	groupHR := Playground.Group(policy.String("hr")).MemberUser(camilla)
+	groupFinance := Playground.Group(policy.String("finance")).MemberUser(ammar, kyle, shark)
+	groupCostControl := Playground.Group(policy.String("cost-control")).MemberUser(ammar, kyle, dean, colin)
+	groupEngineers := Playground.Group(policy.String("engineers")).MemberUser(ammar, colin, dean, jon, kayla, kira, kyle, steven)
+	groupMarketing := Playground.Group(policy.String("marketing")).MemberUser(katherine, ammar)
+	groupSales := Playground.Group(policy.String("sales")).MemberUser(shark, eric)
 	var _ = groupEveryone
 
-	Workspace(uuid.NewString()).CanDeleteBy()
-
 	// Organizations
-	companyOrganization := Organization("company").
+	companyOrganization := Playground.Organization(policy.String("company")).
 		Platform(platform).
 		// Primitive membership
 		MemberGroup(groupHR, groupFinance, groupMarketing, groupSales, groupEngineers, groupCostControl).
@@ -65,33 +66,22 @@ func GenerateRelationships() {
 		Template_viewerGroup(groupCostControl, groupEngineers, groupSales)
 
 	// Make some resources!
-	devTemplate := Template("dev-template").Organization(companyOrganization)
-	devVersion := devTemplate.Version("active")
-	devTemplate.CannotUseBy(elliot, groupHR)
+	devTemplate := Playground.Template(policy.String("dev-template")).Organization(companyOrganization)
+	devVersion := Playground.Template_version(policy.String("active")).Template(devTemplate)
+
+	Playground.AssertTrue(devTemplate.CanUse, elliot, groupHR)
 	var _ = devVersion
 
 	// Steven will create a workspace.
-	companyOrganization.CanCreate_workspaceBy(steven) // Perm check
-	stevenWorkspace := WorkspaceWithDeps("steven-workspace", companyOrganization, devTemplate).
-		ViewerUser(steven).
-		EditorUser(steven).
-		DeletorUser(steven).
-		SelectorUser(steven).
-		ConnectorUser(steven)
-
-	// Add some assertions
-	stevenWorkspace.
-		CanViewBy(steven, ammar, kyle).
-		CannotViewBy(camilla, jon)
-
-	// The workspace can be edited by cost control group via teamCompany
-	stevenWorkspace.
-		CanEditBy(dean).
-		// But cloud cost cannot exec into the workspace.
-		CannotSshBy(dean)
+	stevenWorkspace := WorkspaceWithDeps("steven-workspace", companyOrganization, devTemplate, steven)
+	// Some extra assertions
+	Playground.AssertTrue(stevenWorkspace.CanView, ammar, kyle)
+	Playground.AssertFalse(stevenWorkspace.CanView, camilla, jon)
+	Playground.AssertTrue(stevenWorkspace.CanEdit, steven)
+	Playground.AssertFalse(stevenWorkspace.CanSsh, dean)
 
 	// Validations enumerate who can do the given action.
-	stevenWorkspace.ValidateView().ValidateSsh().ValidateEdit()
+	Playground.Validate(stevenWorkspace.CanView, stevenWorkspace.CanSsh, stevenWorkspace.CanEdit)
 }
 
 // createWorkspace
@@ -106,6 +96,6 @@ func GenerateRelationships() {
 //   - Can a user create a workspace for a given team?
 //   - Can the team provision the workspace with the template?
 //   - Can the team use the selected provisioner to provision the workspace? (TODO, rethink this)
-func testCreateWorkspace(actor *ObjUser, team *ObjOrganization, version *ObjTemplate_version) {
-
-}
+//func testCreateWorkspace(actor *ObjUser, team *ObjOrganization, version *ObjTemplate_version) {
+//
+//}
