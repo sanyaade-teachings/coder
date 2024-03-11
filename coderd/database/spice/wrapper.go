@@ -10,6 +10,8 @@ import (
 	"github.com/coder/coder/v2/coderd/rbac"
 )
 
+var noID = policy.String("")
+
 func (s *SpiceDB) InsertWorkspace(ctx context.Context, arg database.InsertWorkspaceParams) (database.Workspace, error) {
 	builder := policy.New()
 	org := builder.Organization(arg.OrganizationID)
@@ -79,13 +81,14 @@ func (s *SpiceDB) InsertOrganizationMember(ctx context.Context, arg database.Ins
 	return WithRelations(ctx, s, builder.Relationships, s.Store.InsertOrganizationMember, arg)
 }
 
-func (s *SpiceDB) G(ctx context.Context, arg database.GetWorkspacesParams) ([]database.Workspace, error) {
-	//fetch := s.Lookup(policy.New().Workspace(uuid.Nil).CanView(ctx))
-	//fetch(s.Store.GetWorkspaces, func(a database.GetWorkspacesParams) {
-	//
-	//})
+func (s *SpiceDB) GetWorkspaces(ctx context.Context, arg database.GetWorkspacesParams) ([]database.GetWorkspacesRow, error) {
+	ids, err := s.Lookup(policy.New().Workspace(noID).CanView(ctx))
+	if err != nil {
+		return nil, err
+	}
 
-	return nil, nil
+	arg.WorkspaceIds = ids
+	return s.Store.GetWorkspaces(ctx, arg)
 }
 
 func (s *SpiceDB) GetWorkspaceByID(ctx context.Context, id uuid.UUID) (database.Workspace, error) {

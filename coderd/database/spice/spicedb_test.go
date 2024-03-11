@@ -129,3 +129,74 @@ func TestExampleDatabaseLayer(t *testing.T) {
 	_, err = db.GetWorkspaceByID(otherMemberCtx, workspace.ID)
 	require.Errorf(t, err, "OtherMember: %s", otherMember.ID.String())
 }
+
+func TestExampleList(t *testing.T) {
+	t.Parallel()
+
+	logger := slogtest.Make(t, &slogtest.Options{
+		IgnoreErrors:   false,
+		SkipCleanup:    false,
+		IgnoredErrorIs: nil,
+	}).Leveled(slog.LevelDebug)
+
+	ctx := testutil.Context(t, testutil.WaitLong)
+
+	db, err := spice.New(ctx, &spice.SpiceServerOpts{
+		PostgresURI: "",
+		Logger:      logger,
+		Store:       dbmem.New(),
+		Debug:       false,
+	})
+	require.NoError(t, err)
+	err = db.Run(ctx)
+	require.NoError(t, err)
+
+	god := spice.AsGod(ctx)
+	def, err := db.GetDefaultOrganization(god)
+	require.NoError(t, err)
+
+	owner := dbgen.User(t, db, database.User{
+		RBACRoles: []string{rbac.RoleOwner()},
+	})
+	dbgen.OrganizationMember(t, db, database.OrganizationMember{
+		UserID:         owner.ID,
+		OrganizationID: def.ID,
+	})
+
+	users := make([]database.User, 5)
+	for i := range users {
+		users[i] = dbgen.User(t, db, database.User{})
+		dbgen.OrganizationMember(t, db, database.OrganizationMember{
+			UserID:         users[i].ID,
+			OrganizationID: def.ID,
+		})
+
+		memberCtx := spice.AsUser(ctx, users[i].ID)
+		// Workspace owner by member
+		_, err := db.InsertWorkspace(memberCtx, database.InsertWorkspaceParams{
+			ID:                uuid.New(),
+			CreatedAt:         dbtime.Now(),
+			UpdatedAt:         dbtime.Now(),
+			OwnerID:           users[i].ID,
+			OrganizationID:    def.ID,
+			TemplateID:        uuid.New(),
+			Name:              namesgenerator.GetRandomName(1),
+			AutostartSchedule: sql.NullString{},
+			Ttl:               sql.NullInt64{},
+			LastUsedAt:        time.Time{},
+			AutomaticUpdates:  database.AutomaticUpdatesNever,
+		})
+		require.NoError(t, err)
+	}
+
+	db.Debugging(true)
+	memberCtx := spice.AsUser(ctx, users[0].ID)
+	workspaces, err := db.GetWorkspaces(memberCtx, database.GetWorkspacesParams{})
+	require.NoError(t, err)
+	require.Len(t, workspaces, 1)
+
+	ownerCtx := spice.AsUser(ctx, owner.ID)
+	workspaces, err = db.GetWorkspaces(ownerCtx, database.GetWorkspacesParams{})
+	require.NoError(t, err)
+	require.Len(t, workspaces, len(users))
+}
