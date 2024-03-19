@@ -207,6 +207,7 @@ const (
 	TemplateBuiltinAppDisplayNameJetBrains   string = "JetBrains"
 	TemplateBuiltinAppDisplayNameWebTerminal string = "Web Terminal"
 	TemplateBuiltinAppDisplayNameSSH         string = "SSH"
+	TemplateBuiltinAppDisplayNameSFTP        string = "SFTP"
 )
 
 // TemplateAppUsage shows the usage of an app for one or more templates.
